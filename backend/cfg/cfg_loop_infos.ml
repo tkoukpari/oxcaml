@@ -43,7 +43,9 @@ let compute_loop_of_back_edge cfg { Cfg_edge.src; dst } =
       in
       visit stack acc
   in
-  visit [src] (Label.Set.add src (Label.Set.singleton dst))
+  if Label.equal src dst
+  then Label.Set.singleton src
+  else visit [src] (Label.Set.add src (Label.Set.singleton dst))
 
 type loops = loop Cfg_edge.Map.t
 
