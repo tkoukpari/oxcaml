@@ -1240,6 +1240,7 @@ let can_group discr pat =
   | Constant (Const_int8 _), Constant (Const_int8 _)
   | Constant (Const_int16 _), Constant (Const_int16 _)
   | Constant (Const_char _), Constant (Const_char _)
+  | Constant (Const_untagged_char _), Constant (Const_untagged_char _)
   | Constant (Const_string _), Constant (Const_string _)
   | Constant (Const_float _), Constant (Const_float _)
   | Constant (Const_float32 _), Constant (Const_float32 _)
@@ -1279,6 +1280,7 @@ let can_group discr pat =
           | Const_float32 _ | Const_unboxed_float _ | Const_unboxed_float32 _
           | Const_int8 _ | Const_int16 _
           | Const_int32 _ | Const_int64 _ | Const_nativeint _
+          | Const_untagged_char _
           | Const_untagged_int8 _ | Const_untagged_int16 _
           | Const_unboxed_int32 _ | Const_unboxed_int64 _
           | Const_untagged_int _ | Const_unboxed_nativeint _ )
@@ -3210,6 +3212,8 @@ let combine_constant value_kind loc arg cst partial ctx def
     | Const_nativeint _ ->
         make_scalar_test_sequence
           (Scalar.integral (Value (Boxable (Nativeint Any_locality_mode))))
+    | Const_untagged_char _ ->
+        make_scalar_test_sequence (Scalar.integral (Naked (Taggable Int8)))
     | Const_untagged_int _ ->
         make_scalar_test_sequence (Scalar.integral (Naked (Taggable Int)))
     | Const_untagged_int8 _ ->

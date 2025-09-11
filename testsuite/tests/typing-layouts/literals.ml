@@ -13,6 +13,7 @@ module Int32_u = Stdlib_upstream_compatible.Int32_u
 module Int64_u = Stdlib_upstream_compatible.Int64_u
 module Nativeint_u = Stdlib_upstream_compatible.Nativeint_u
 module Int_u = Stdlib_stable.Int_u
+module Char_u = Stdlib_stable.Char_u
 
 let test_float s f =
   Format.printf "%s: %f\n" s (Float_u.to_float f); Format.print_flush ()
@@ -24,6 +25,8 @@ let test_nativeint s f =
   Format.printf "%s: %s\n" s (Nativeint_u.to_string f); Format.print_flush ()
 let test_int s f =
   Format.printf "%s: %d\n" s (Int_u.to_int f); Format.print_flush ()
+let test_char s f =
+  Format.printf "%s: %C\n" s (Char_u.to_char f); Format.print_flush ()
 
 [%%expect{|
 module Float_u = Stdlib_upstream_compatible.Float_u
@@ -31,11 +34,13 @@ module Int32_u = Stdlib_upstream_compatible.Int32_u
 module Int64_u = Stdlib_upstream_compatible.Int64_u
 module Nativeint_u = Stdlib_upstream_compatible.Nativeint_u
 module Int_u = Stdlib_stable.Int_u
+module Char_u = Stdlib_stable.Char_u
 val test_float : string -> Float_u.t -> unit = <fun>
 val test_int32 : string -> Int32_u.t -> unit = <fun>
 val test_int64 : string -> Int64_u.t -> unit = <fun>
 val test_nativeint : string -> Nativeint_u.t -> unit = <fun>
 val test_int : string -> int# -> unit = <fun>
+val test_char : string -> char# -> unit = <fun>
 |}]
 
 (*****************************************)
@@ -194,6 +199,26 @@ Line 1, characters 32-55:
 1 | let () = test_int "max_int + 2" (#4611686018427387905m)
                                     ^^^^^^^^^^^^^^^^^^^^^^^
 Error: Integer literal exceeds the range of representable integers of type "int#"
+|}]
+
+let () = test_char "untagged char" #'c'
+[%%expect{|
+untagged char: 'c'
+|}]
+
+let () = test_char "untagged octal char" #'\o000'
+[%%expect{|
+untagged octal char: '\000'
+|}]
+
+let () = test_char "untagged hex char" #'\xFF'
+[%%expect{|
+untagged hex char: '\255'
+|}]
+
+let () = test_char "untagged decimal char" #'\222'
+[%%expect{|
+untagged decimal char: '\222'
 |}]
 
 (*****************************************)

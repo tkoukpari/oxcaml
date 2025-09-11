@@ -1039,6 +1039,7 @@ module Int32_u = Stdlib_upstream_compatible.Int32_u
 module Int64_u = Stdlib_upstream_compatible.Int64_u
 module Nativeint_u = Stdlib_upstream_compatible.Nativeint_u
 module Int_u = Stdlib_stable.Int_u
+module Char_u = Stdlib_stable.Char_u
 
 [%%expect{|
 module Float_u = Stdlib_upstream_compatible.Float_u
@@ -1048,6 +1049,7 @@ module Int32_u = Stdlib_upstream_compatible.Int32_u
 module Int64_u = Stdlib_upstream_compatible.Int64_u
 module Nativeint_u = Stdlib_upstream_compatible.Nativeint_u
 module Int_u = Stdlib_stable.Int_u
+module Char_u = Stdlib_stable.Char_u
 |}]
 
 let test_float s f =
@@ -1064,6 +1066,8 @@ let test_int s f =
   Format.printf "%s: %d\n" s (Int_u.to_int f); Format.print_flush ()
 let test_nativeint s f =
   Format.printf "%s: %s\n" s (Nativeint_u.to_string f); Format.print_flush ()
+let test_char s f =
+  Format.printf "%s: %C\n" s (Char_u.to_char f); Format.print_flush ()
 
 [%%expect{|
 val test_float : string -> Float_u.t -> unit = <fun>
@@ -1073,6 +1077,7 @@ val test_int32 : string -> Int32_u.t -> unit = <fun>
 val test_int64 : string -> Int64_u.t -> unit = <fun>
 val test_int : string -> int# -> unit = <fun>
 val test_nativeint : string -> Nativeint_u.t -> unit = <fun>
+val test_char : string -> char# -> unit = <fun>
 |}]
 
 (* Expressions *)
@@ -1106,6 +1111,7 @@ let x = test_int8 "one_hundred_in_octal" (#0o144s)
 let x = test_int16 "two_hundred_in_hex" (#0xC8S)
 let x = test_int32 "twenty_five_in_octal" (#0o31l)
 let x = test_int64 "forty_two_in_binary" (#0b101010L)
+let x = test_char "untagged char" (#'c')
 
 [%%expect{|
 e: 2.718282
@@ -1163,6 +1169,8 @@ val x : unit = ()
 twenty_five_in_octal: 25
 val x : unit = ()
 forty_two_in_binary: 42
+val x : unit = ()
+untagged char: 'c'
 val x : unit = ()
 |}]
 
