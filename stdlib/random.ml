@@ -17,7 +17,6 @@
 (* Pseudo-random number generator *)
 
 open! Stdlib
-module DLS = Domain.Safe.DLS
 
 [@@@ocaml.flambda_o3]
 
@@ -342,19 +341,24 @@ let mk_default () =
            (-8591268803865043407L)
            6388613595849772044L
 
-(* CR-soon mslater: switch to TLS to remove thread unsafety *)
-(* CR-someday mslater: switch to FLS to remove magic *)
+module TLS = Domain.Safe.TLS
+
 let random_key =
-  DLS.new_key
+  TLS.new_key
     ~split_from_parent:(fun s ->
       let s = State.split s in
+      (* Safe because [Sate.split] returns a deep copy that's only
+         accessible to the new thread. *)
       (fun () -> Obj.magic_uncontended s))
     mk_default
 
-let[@inline] apply0 f () = f (Obj.magic_uncontended (DLS.get random_key))
-let[@inline] apply1 f v =  f (Obj.magic_uncontended (DLS.get random_key)) v
-let[@inline] apply_in_range f ~min ~max = 
-  f (Obj.magic_uncontended (DLS.get random_key)) ~min ~max
+(* CR-someday mslater: this is safe since we do not yield while accessing
+   the state and we do not borrow the state. Note using FLS would be 
+   required for determinism in the presence of fibers. *)
+let[@inline] apply0 f () = f (Obj.magic_uncontended (TLS.get random_key))
+let[@inline] apply1 f v =  f (Obj.magic_uncontended (TLS.get random_key)) v
+let[@inline] apply_in_range f ~min ~max =
+  f (Obj.magic_uncontended (TLS.get random_key)) ~min ~max
 
 let bits = apply0 State.bits
 let int = apply1 State.int
