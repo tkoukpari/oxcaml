@@ -291,6 +291,12 @@ jobs:
         ulimit -c unlimited
         make $target \
           || (if [ "$expected_fail" = true ]; then exit 0; else exit 1; fi);
+
+        # Install the compiler for flambda2_o3 configuration to populate _install directory
+        # This is needed for the metrics collection step to analyze installed artifacts
+        if [ "${{ matrix.name }}" = "flambda2_o3" ]; then
+          make install
+        fi
       env:
         BUILD_OCAMLPARAM: ${{ matrix.build_ocamlparam }}
         OCAMLPARAM: ${{ matrix.ocamlparam }}
@@ -358,6 +364,69 @@ jobs:
           ./_build/main/tools/regalloc/regalloc.exe _build \
             -validate -param SPLIT_AROUND_LOOPS:on -regalloc $allocator || exit 1; \
         done
+
+    - name: Collect and push metrics
+      if: matrix.name == 'flambda2_o3' && github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        GH_TOKEN: ${{ secrets.METRICS_REPO_TOKEN }}
+      run: |
+        # Checkout metrics repository
+        gh repo clone oxcaml/oxcaml-metrics metrics-repo
+
+        # Create data directory if it doesn't exist
+        mkdir -p metrics-repo/data
+
+        # Generate timestamp and short commit hash
+        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        # Use the actual commit being tested (not the merge commit for PRs)
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          COMMIT_HASH="${{ github.event.pull_request.head.sha }}"
+        else
+          COMMIT_HASH="${{ github.sha }}"
+        fi
+        SHORT_HASH="${COMMIT_HASH:0:8}"
+        DATE=$(date -u +"%Y-%m-%d")
+
+        # CSV filename
+        CSV_FILE="metrics-repo/data/metrics-${DATE}-${SHORT_HASH}.csv"
+
+        # Extensions to track
+        EXTENSIONS="exe opt a cmxa cma cmi cmx cmo cms cmsi cmt cmti o"
+
+        # Write CSV header
+        echo "timestamp,commit_hash,extension,total_size_bytes" > "$CSV_FILE"
+
+        # Collect metrics for each extension
+        for ext in $EXTENSIONS; do
+          total_size=0
+          if find ${{ github.workspace }}/_install -name "*.${ext}" -type f > /tmp/files_${ext} 2>/dev/null; then
+            # Calculate total size of all files with this extension
+            while IFS= read -r file; do
+              if [ -f "$file" ]; then
+                size=$(stat -c%s "$file" 2>/dev/null || echo 0)
+                total_size=$((total_size + size))
+              fi
+            done < /tmp/files_${ext}
+          fi
+          # Write to CSV
+          echo "${TIMESTAMP},${COMMIT_HASH},${ext},${total_size}" >> "$CSV_FILE"
+        done
+
+        echo "Generated metrics file: $CSV_FILE"
+        cat "$CSV_FILE"
+
+        # Commit and push metrics
+        cd metrics-repo
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Configure git to use gh for authentication
+        git config --local credential.helper ""
+        git config --local credential.https://github.com.helper "!gh auth git-credential"
+
+        git add data/
+        git commit -m "Add metrics for commit ${COMMIT_HASH}"
+        git push
 
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
