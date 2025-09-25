@@ -40,6 +40,7 @@ for ext in $EXTENSIONS; do
         fi
     fi
     # Clean up temporary file
+
     if [ -n "$temp_file" ]; then
         rm -f "$temp_file"
     fi
