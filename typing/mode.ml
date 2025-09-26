@@ -1894,6 +1894,8 @@ module C = Lattices_mono
 module Solver = Solver_mono (Hint_for_solver) (C)
 module S = Solver
 
+let erase_hints () = S.erase_hints ()
+
 type monadic = C.monadic =
   { uniqueness : C.Uniqueness.t;
     contention : C.Contention.t;
