@@ -625,6 +625,8 @@ and Exp_desc : sig
   val antiquote : Exp.t -> t
 
   val splice : Code.t -> t
+
+  val eval : Type.t -> t
 end
 
 and Exp : sig

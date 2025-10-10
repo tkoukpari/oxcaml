@@ -585,7 +585,7 @@ module Identifier : sig
 
     val wrap : t' -> t
 
-    val compilation_unit : Location.t -> string -> t'
+    val compilation_unit : Location.t -> Global_module.Name.t -> t'
 
     val dot : Location.t -> t -> string -> t'
 
@@ -766,6 +766,13 @@ end = struct
     let wrap = inject_force
 
     let compilation_unit loc a1 =
+      (* CR metaprogramming jrickard: I'm pretty confident this is bugged:
+         it ignores parameterized libraries, and references the wrong file for
+         impls (for example Stdlib.Buffer should reference Stdlib__Buffer but
+         this references Stdlib). *)
+      Env.require_global_for_quote
+        (Compilation_unit.Name.of_head_of_global_name a1);
+      let a1 = Global_module.Name.to_string a1 in
       apply1 "Identifier.Module" "compilation_unit" loc (string loc a1)
 
     let dot loc a1 a2 =
@@ -1782,6 +1789,8 @@ and Exp_desc : sig
   val antiquote : Location.t -> Exp.t -> t'
 
   val splice : Location.t -> Code.t -> t'
+
+  val eval : Location.t -> Type.t -> t'
 end = struct
   type s = lambda
 
@@ -1921,6 +1930,8 @@ end = struct
   let antiquote loc a1 = apply1 "Exp_desc" "antiquote" loc (extract a1)
 
   let splice loc a1 = apply1 "Exp_desc" "splice" loc (extract a1)
+
+  let eval loc a1 = apply1 "Exp_desc" "eval" loc (extract a1)
 end
 
 and Exp : sig
@@ -2064,10 +2075,10 @@ let rec module_for_path loc = function
   | Path.Pident id ->
     (match Hashtbl.find_opt vars_env.env_mod id with
     | Some m -> Identifier.Module.var loc m (quote_loc loc)
-    | None ->
-      if Ident.is_global id
-      then Identifier.Module.compilation_unit loc (Ident.name id)
-      else raise Exit)
+    | None -> (
+      match Ident.to_global id with
+      | Some global -> Identifier.Module.compilation_unit loc global
+      | None -> raise Exit))
     |> Identifier.Module.wrap
   | Path.Pdot (p, s) ->
     Identifier.Module.dot loc (module_for_path loc p) s
@@ -2325,9 +2336,14 @@ type case_binding =
       * (Var.Value.t list -> (Var.Module.t list -> Pat.t) lam) lam
 
 let rec quote_module_path loc = function
-  | Path.Pident s ->
-    Identifier.Module.compilation_unit loc (Ident.name s)
-    |> Identifier.Module.wrap
+  (* CR metaprogramming jrickard: I think this should probably use
+     [Env.find_module_address] at least it should do to register the globals
+     that will be needed. *)
+  | Path.Pident s -> (
+    match Ident.to_global s with
+    | Some global ->
+      Identifier.Module.compilation_unit loc global |> Identifier.Module.wrap
+    | None -> failwith "TODO")
   | Path.Pdot (p, s) ->
     Identifier.Module.dot loc (quote_module_path loc p) s
     |> Identifier.Module.wrap
@@ -3087,6 +3103,7 @@ and quote_expression_desc transl stage e =
     | Texp_atomic_loc _ ->
       fatal_error "Cannot quote Texp_atomic_loc constructs yet."
     | Texp_idx _ -> fatal_error "Cannot quote Texp_idx constructs yet."
+    | Texp_eval (typ, _) -> Exp_desc.eval loc (quote_core_type typ)
   in
   List.iter update_env_without_extra e.exp_extra;
   List.fold_right
