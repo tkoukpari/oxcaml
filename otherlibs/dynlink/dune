@@ -42,7 +42,8 @@
  (targets parser.ml)
  (deps ../../parser.ml)
  (action
-  (with-stdout-to %{targets}
+  (with-stdout-to
+   %{targets}
    (progn
     (echo "module MenhirLib = CamlinternalMenhirLib")
     (cat %{deps})))))
@@ -51,7 +52,8 @@
  (targets parser.mli)
  (deps ../../parser.mli)
  (action
-  (with-stdout-to %{targets}
+  (with-stdout-to
+   %{targets}
    (progn
     (echo "module MenhirLib = CamlinternalMenhirLib")
     (cat %{deps})))))

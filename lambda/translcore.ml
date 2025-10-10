@@ -1330,6 +1330,15 @@ and transl_exp0 ~in_new_scope ~scopes sort e =
       Location.todo_overwrite_not_implemented ~kind:"Translcore" e.exp_loc
   | Texp_hole _ ->
       Location.todo_overwrite_not_implemented ~kind:"Translcore" e.exp_loc
+  | Texp_quotation exp ->
+      Translquote.transl_quote (transl_exp ~scopes sort) exp e.exp_loc
+  (* TODO: update scopes *)
+  | Texp_antiquotation exp ->
+      fatal_errorf
+        "@[Cannot unquote expression outside of a quotation context:@ \
+         %a@]"
+        Pprintast.expression (Untypeast.untype_expression exp)
+
 
 and pure_module m =
   match m.mod_desc with
