@@ -406,16 +406,15 @@ let value_kind_of_value_jkind env jkind =
      the principality check, as we're just trying to compute optimizations. *)
   let context = Ctype.mk_jkind_context_always_principal env in
   let externality_upper_bound =
-    Jkind.get_externality_upper_bound ~context jkind in
-  match layout, externality_upper_bound with
-  | Base Value, External -> Pintval
-  | Base Value, External64 ->
-    if !Clflags.native_code && Sys.word_size = 64 then Pintval else Pgenval
-  | Base Value, Internal -> Pgenval
-  | Any, _
-  | Product _, _
+    Jkind.get_externality_upper_bound ~context jkind
+  in
+  match layout with
+  | Base Value ->
+    value_kind_of_value_with_externality externality_upper_bound
+  | Any
+  | Product _
   | Base (Void | Untagged_immediate | Float64 | Float32 | Word | Bits8 |
-          Bits16 | Bits32 | Bits64 | Vec128 | Vec256 | Vec512) , _ ->
+          Bits16 | Bits32 | Bits64 | Vec128 | Vec256 | Vec512) ->
     Misc.fatal_error "expected a layout of value"
 
 (* [value_kind] has a pre-condition that it is only called on values.  With the
