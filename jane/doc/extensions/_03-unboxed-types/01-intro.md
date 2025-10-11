@@ -546,7 +546,7 @@ or (unsafe) OCaml code.
 
 Note also that, while unboxed types are generally considered an "upstream
 compatible" (because they can be erased while preserving behavior), depending on
-the exact representation of mixed blocks is not. Thus, use of these mechanism is
+the exact representation of mixed blocks is not. Thus, use of these mechanisms is
 also a sign that your code may need a custom mechanism if it is intended to work
 both in OxCaml and upstream OCaml.
 
@@ -593,7 +593,7 @@ Assert_mixed_block_layout_v4;
 
 ### Future changes and history
 
-We will bump the version number if make changes to the layout of mixed
+We will bump the version number if we make changes to the layout of mixed
 blocks. For example, it will be bumped if:
 
   * We change what word half the int32 is stored in
