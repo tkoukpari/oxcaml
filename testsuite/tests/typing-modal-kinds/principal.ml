@@ -15,7 +15,9 @@ Line 1, characters 72-73:
 1 | let string_escape_l (local_ y) = let Pair (x, _) = Pair (y, "hello") in x
                                                                             ^
 Error: This value is "local"
-       but is expected to be "local" to the parent region or "global"
+       because it is from the allocation (at Line 1, characters 51-68) containing a value
+       which is "local" to the parent region.
+       However, the highlighted expression is expected to be "local" to the parent region or "global"
        because it is a function return value.
        Hint: Use exclave_ to return a local value.
 |}]
@@ -27,7 +29,9 @@ Line 1, characters 72-73:
 1 | let string_escape_r (local_ y) = let Pair (x, _) = Pair ("hello", y) in x
                                                                             ^
 Error: This value is "local"
-       but is expected to be "local" to the parent region or "global"
+       because it is from the allocation (at Line 1, characters 51-68) containing a value
+       which is "local" to the parent region.
+       However, the highlighted expression is expected to be "local" to the parent region or "global"
        because it is a function return value.
        Hint: Use exclave_ to return a local value.
 |}]
@@ -41,7 +45,9 @@ Line 1, characters 63-64:
 1 | let int_escape_l (local_ y) = let Pair (x, _) = Pair (y, 5) in x
                                                                    ^
 Error: This value is "local"
-       but is expected to be "local" to the parent region or "global"
+       because it is from the allocation (at Line 1, characters 48-59) containing a value
+       which is "local" to the parent region.
+       However, the highlighted expression is expected to be "local" to the parent region or "global"
        because it is a function return value.
        Hint: Use exclave_ to return a local value.
 |}]
@@ -55,7 +61,9 @@ Line 1, characters 63-64:
 1 | let int_escape_r (local_ y) = let Pair (x, _) = Pair (5, y) in x
                                                                    ^
 Error: This value is "local"
-       but is expected to be "local" to the parent region or "global"
+       because it is from the allocation (at Line 1, characters 48-59) containing a value
+       which is "local" to the parent region.
+       However, the highlighted expression is expected to be "local" to the parent region or "global"
        because it is a function return value.
        Hint: Use exclave_ to return a local value.
 |}]
