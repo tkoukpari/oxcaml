@@ -42,16 +42,17 @@ def collect_metrics(install_dir: str, output_dir: str, commit_hash: str,
 
     with csv_path.open("w") as csv_file:
         # Write CSV header
-        csv_file.write("timestamp,commit_hash,pr_number,extension,total_size_bytes\n")
+        csv_file.write("timestamp,commit_hash,pr_number,kind,name,value\n")
 
         # Collect metrics for each extension
+        kind = "size_in_bytes"
         for ext in extensions:
             files = list(install_path.rglob(f"*.{ext}"))
             total_size = sum(file.stat().st_size for file in files
                            if file.is_file())
 
             # Write to CSV
-            csv_file.write(f"{timestamp},{commit_hash},{pr_number},{ext},{total_size}\n")
+            csv_file.write(f"{timestamp},{commit_hash},{pr_number},{kind},{ext},{total_size}\n")
 
     print(f"Generated metrics file: {csv_path}")
     print(f"Metrics collected for commit: {commit_hash}")
