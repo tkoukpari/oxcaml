@@ -466,7 +466,7 @@ Line 6, characters 12-15:
 6 |     let _ = M.x in
                 ^^^
 Error: The value "M.x" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 5-7, characters 23-6)
+       because it is used inside the function at Lines 5-7, characters 23-6
        which is expected to be "portable".
 |}]
 
@@ -1057,7 +1057,7 @@ Line 3, characters 12-13:
 3 |     let _ = f in
                 ^
 Error: The value "f" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 1-4, characters 21-6)
+       because it is used inside the function at Lines 1-4, characters 21-6
        which is expected to be "portable".
 |}]
 
@@ -1082,7 +1082,7 @@ Line 4, characters 12-13:
 4 |     let _ = f in
                 ^
 Error: The value "f" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 3-5, characters 23-6)
+       because it is used inside the function at Lines 3-5, characters 23-6
        which is expected to be "portable".
 |}]
 
@@ -1220,7 +1220,7 @@ Line 2, characters 18-19:
 2 |   let k = (module M : Func_nonportable) in
                       ^
 Error: The value "M.baz" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 1-3, characters 21-3)
+       because it is used inside the function at Lines 1-3, characters 21-3
        which is expected to be "portable".
 |}]
 
@@ -1237,7 +1237,7 @@ Line 4, characters 12-13:
 4 |     (module M : Empty)
                 ^
 Error: The module "M" is "local" but is expected to be "global"
-       because it is used inside the function (at Lines 3-4, characters 21-22)
+       because it is used inside the function at Lines 3-4, characters 21-22
        which is expected to be "global".
 |}]
 
@@ -1254,7 +1254,7 @@ Line 4, characters 12-13:
 4 |     (module M : Empty)
                 ^
 Error: The module "M" is "local" but is expected to be "global"
-       because it is used inside the function (at Lines 3-4, characters 21-22)
+       because it is used inside the function at Lines 3-4, characters 21-22
        which is expected to be "global".
 |}]
 
@@ -1314,7 +1314,7 @@ Line 3, characters 18-34:
                       ^^^^^^^^^^^^^^^^
 Error: The module "M_Func_portable'" is "nonportable"
        but is expected to be "portable"
-       because it is used inside the function (at Lines 2-4, characters 21-3)
+       because it is used inside the function at Lines 2-4, characters 21-3
        which is expected to be "portable".
 |}]
 
@@ -1331,7 +1331,7 @@ Line 4, characters 20-36:
 4 |     let k = (module M_Func_portable' : Func_portable) in
                         ^^^^^^^^^^^^^^^^
 Error: The module "M_Func_portable'" is "local" but is expected to be "global"
-       because it is used inside the function (at Lines 3-5, characters 21-5)
+       because it is used inside the function at Lines 3-5, characters 21-5
        which is expected to be "global".
 |}]
 
@@ -1344,7 +1344,7 @@ Line 2, characters 18-20:
 2 |   let k = (module M' : Module) in
                       ^^
 Error: The value "M'.M.baz" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 1-3, characters 21-3)
+       because it is used inside the function at Lines 1-3, characters 21-3
        which is expected to be "portable".
 |}]
 
@@ -1371,7 +1371,7 @@ Line 4, characters 18-19:
 4 |   let k = (module F : F) in
                       ^
 Error: The module "F" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 3-5, characters 21-3)
+       because it is used inside the function at Lines 3-5, characters 21-3
        which is expected to be "portable".
 |}]
 
@@ -1399,7 +1399,7 @@ Line 2, characters 18-19:
 2 |   let k = (module M : Class) in
                       ^
 Error: The class "M.cla" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 1-3, characters 21-3)
+       because it is used inside the function at Lines 1-3, characters 21-3
        which is expected to be "portable".
 |}]
 
@@ -1420,7 +1420,7 @@ Line 2, characters 25-26:
 2 |     let module M' = (val m : Func_portable) in
                              ^
 Error: The value "m" is "nonportable" but is expected to be "portable"
-       because it is used inside the function (at Lines 1-3, characters 21-6)
+       because it is used inside the function at Lines 1-3, characters 21-6
        which is expected to be "portable".
 |}]
 
