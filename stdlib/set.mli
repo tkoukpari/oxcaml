@@ -1,4 +1,3 @@
-# 2 "set.mli"
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -13,10 +12,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
-@@ portable
-
-open! Stdlib
 
 (* NOTE: If this file is set.mli, do not edit it directly! Instead,
    edit templates/set.template.mli and run tools/sync_stdlib_docs *)
@@ -329,5 +324,5 @@ module Make (Ord : OrderedType) : S with type elt = Ord.t
 
 module MakePortable (Ord : sig @@ portable include OrderedType end)
   : sig @@ portable include S with type elt = Ord.t end
-(** Like [Make], but takes a portable [compare] function to
+(** Like {!Make}, but takes a portable [compare] function to
     portable [Set] operations. *)

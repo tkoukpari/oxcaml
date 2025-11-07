@@ -1,4 +1,4 @@
-# 2 "list.mli"
+# 2 "listLabels.mli"
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -17,6 +17,8 @@
 @@ portable
 
 open! Stdlib
+
+[@@@ocaml.nolabels]
 
 (* NOTE:
    If this file is listLabels.mli, run tools/sync_stdlib_docs after editing it
@@ -219,21 +221,21 @@ val concat_map : ('a : value_or_null) ('b : value_or_null)
 *)
 
 val fold_left_map :
-   ('a : value_or_null) ('acc : value_or_null) ('b : value_or_null).
-   ('acc -> 'a -> 'acc * 'b) -> 'acc -> 'a list -> 'acc * 'b list
+  ('acc : value_or_null) ('a : value_or_null) ('b : value_or_null)
+  . ('acc -> 'a -> 'acc * 'b) -> 'acc -> 'a list -> 'acc * 'b list
 (** [fold_left_map] is  a combination of [fold_left] and [map] that threads an
     accumulator through calls to [f].
     @since 4.11
 *)
 
-val fold_left : ('a : value_or_null) ('acc : value_or_null).
-   ('acc -> 'a -> 'acc) -> 'acc -> 'a list -> 'acc
+val fold_left : ('acc : value_or_null) ('a : value_or_null).
+  ('acc -> 'a -> 'acc) -> 'acc -> 'a list -> 'acc
 (** [fold_left f init [b1; ...; bn]] is
    [f (... (f (f init b1) b2) ...) bn].
  *)
 
 val fold_right : ('a : value_or_null) ('acc : value_or_null).
-   ('a -> 'acc -> 'acc) -> 'a list -> 'acc -> 'acc
+  ('a -> 'acc -> 'acc) -> 'a list -> 'acc -> 'acc
 (** [fold_right f [a1; ...; an] init] is
    [f a1 (f a2 (... (f an init) ...))]. Not tail-recursive.
  *)
@@ -265,8 +267,8 @@ val rev_map2 : ('a : value_or_null) ('b : value_or_null) ('c : value_or_null)
  *)
 
 val fold_left2 :
-  ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  ('acc -> 'a -> 'b -> 'acc) -> 'acc -> 'a list -> 'b list -> 'acc
+  ('acc : value_or_null) ('a : value_or_null) ('b : value_or_null)
+  . ('acc -> 'a -> 'b -> 'acc) -> 'acc -> 'a list -> 'b list -> 'acc
 (** [fold_left2 f init [a1; ...; an] [b1; ...; bn]] is
    [f (... (f (f init a1 b1) a2 b2) ...) an bn].
    @raise Invalid_argument if the two lists are determined
@@ -274,8 +276,8 @@ val fold_left2 :
  *)
 
 val fold_right2 :
-  ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null).
-  ('a -> 'b -> 'acc -> 'acc) -> 'a list -> 'b list -> 'acc -> 'acc
+  ('a : value_or_null) ('b : value_or_null) ('acc : value_or_null)
+  . ('a -> 'b -> 'acc -> 'acc) -> 'a list -> 'b list -> 'acc -> 'acc
 (** [fold_right2 f [a1; ...; an] [b1; ...; bn] init] is
    [f a1 b1 (f a2 b2 (... (f an bn init) ...))].
    @raise Invalid_argument if the two lists are determined
@@ -414,8 +416,8 @@ val partition_map :
 (** {1 Association lists} *)
 
 
-val assoc : ('a : value_or_null) ('b : value_or_null).
-  'a -> ('a * 'b) list -> 'b
+val assoc : ('a : value_or_null) ('b : value_or_null)
+  . 'a -> ('a * 'b) list -> 'b
 (** [assoc a l] returns the value associated with key [a] in the list of
    pairs [l]. That is,
    [assoc a [ ...; (a,b); ...] = b]
@@ -424,8 +426,8 @@ val assoc : ('a : value_or_null) ('b : value_or_null).
    list [l].
  *)
 
-val assoc_opt : ('a : value_or_null) ('b : value_or_null).
-  'a -> ('a * 'b) list -> 'b option
+val assoc_opt : ('a : value_or_null) ('b : value_or_null)
+  . 'a -> ('a * 'b) list -> 'b option
 (** [assoc_opt a l] returns the value associated with key [a] in the list of
     pairs [l]. That is,
     [assoc_opt a [ ...; (a,b); ...] = Some b]
@@ -476,8 +478,8 @@ val remove_assq : ('a : value_or_null) ('b : value_or_null).
 (** {1 Lists of pairs} *)
 
 
-val split : ('a : value_or_null) ('b : value_or_null).
-  ('a * 'b) list -> 'a list * 'b list
+val split : ('a : value_or_null) ('b : value_or_null)
+  . ('a * 'b) list -> 'a list * 'b list
 (** Transform a list of pairs into a pair of lists:
    [split [(a1,b1); ...; (an,bn)]] is [([a1; ...; an], [b1; ...; bn])].
    Not tail-recursive.
@@ -512,7 +514,8 @@ val sort : ('a : value_or_null). ('a -> 'a -> int) -> 'a list -> 'a list
    heap space and logarithmic stack space.
  *)
 
-val stable_sort : ('a : value_or_null). ('a -> 'a -> int) -> 'a list -> 'a list
+val stable_sort : ('a : value_or_null).
+  ('a -> 'a -> int) -> 'a list -> 'a list
 (** Same as {!sort}, but the sorting algorithm is guaranteed to
    be stable (i.e. elements that compare equal are kept in their
    original order).
@@ -521,12 +524,14 @@ val stable_sort : ('a : value_or_null). ('a -> 'a -> int) -> 'a list -> 'a list
    heap space and logarithmic stack space.
  *)
 
-val fast_sort : ('a : value_or_null). ('a -> 'a -> int) -> 'a list -> 'a list
+val fast_sort : ('a : value_or_null).
+  ('a -> 'a -> int) -> 'a list -> 'a list
 (** Same as {!sort} or {!stable_sort}, whichever is
     faster on typical input.
  *)
 
-val sort_uniq : ('a : value_or_null). ('a -> 'a -> int) -> 'a list -> 'a list
+val sort_uniq : ('a : value_or_null).
+  ('a -> 'a -> int) -> 'a list -> 'a list
 (** Same as {!sort}, but also remove duplicates.
     @since 4.02 (4.03 in ListLabels)
  *)
@@ -544,12 +549,12 @@ val merge : ('a : value_or_null).
 
 (** {1 Lists and Sequences} *)
 
-val to_seq : ('a : value_or_null) . 'a list -> 'a Seq.t
+val to_seq : ('a : value_or_null). 'a list -> 'a Seq.t
 (** Iterate on the list.
     @since 4.07
  *)
 
-val of_seq : ('a : value_or_null) . 'a Seq.t -> 'a list
+val of_seq : ('a : value_or_null). 'a Seq.t -> 'a list
 (** Create a list from a sequence.
     @since 4.07
  *)

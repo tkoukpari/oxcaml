@@ -1,4 +1,4 @@
-# 2 "array.mli"
+# 2 "arrayLabels.mli"
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -31,6 +31,8 @@ open! Stdlib
     The labeled version of this module can be used as described in the
     {!StdLabels} module.
 *)
+
+[@@@ocaml.nolabels]
 
 type 'a t = 'a array
 (** An alias for the type of arrays. *)

@@ -42,7 +42,6 @@
 
 (** {1 Error report} *)
 
-
 type error =
     E2BIG               (** Argument list too long *)
   | EACCES              (** Permission denied *)
@@ -235,7 +234,8 @@ val execv : string @ local -> string array @ local read -> 'a
    @raise Unix_error on failure *)
 
 val execve :
-  string @ local -> string array @ local read -> string array @ local read -> 'a
+  string @ local -> string array @ local read ->
+  string array @ local read -> 'a
 (** Same as {!execv}, except that the third argument provides the
    environment to the program executed. *)
 
@@ -244,7 +244,8 @@ val execvp : string @ local -> string array @ local read -> 'a
    the program is searched in the path. *)
 
 val execvpe :
-  string @ local -> string array @ local read -> string array @ local read -> 'a
+  string @ local -> string array @ local read ->
+  string array @ local read -> 'a
 (** Same as {!execve}, except that
    the program is searched in the path. *)
 
@@ -328,10 +329,8 @@ val nice : int -> int
 (** {1 Basic file input/output} *)
 
 
-type file_descr : immediate mod contended portable
+type file_descr
 (** The abstract type of file descriptors. *)
-(* CR mshinwell: file descriptors are custom blocks on Windows, but that
-   platform is not currently supported *)
 
 val stdin : file_descr
 (** File descriptor for standard input.*)
@@ -416,12 +415,14 @@ val write_bigarray :
 (** Same as {!write}, but take the data from a bigarray.
     @since 5.2 *)
 
-val single_write : file_descr -> bytes @ local read -> int -> int -> int
+val single_write :
+  file_descr -> bytes @ local read -> int -> int -> int
 (** Same as {!write}, but attempts to write only once.
    Thus, if an error occurs, [single_write] guarantees that no data
    has been written. *)
 
-val write_substring : file_descr -> string @ local -> int -> int -> int
+val write_substring :
+  file_descr -> string @ local -> int -> int -> int
 (** Same as {!write}, but take the data from a string instead of a byte
     sequence.
     @since 4.02 *)
@@ -616,7 +617,8 @@ val map_file :
   file_descr ->
   ?pos (* thwart tools/sync_stdlib_docs *):int64 ->
   ('a, 'b) Stdlib.Bigarray.kind ->
-  'c Stdlib.Bigarray.layout -> bool -> int array @ local read ->
+  'c Stdlib.Bigarray.layout -> bool ->
+  int array @ local read ->
   ('a, 'b, 'c) Stdlib.Bigarray.Genarray.t
 (** Memory mapping of a file as a Bigarray.
   [map_file fd kind layout shared dims]
@@ -853,7 +855,7 @@ val chroot : string @ local -> unit
 
     @raise Invalid_argument on Windows *)
 
-type dir_handle : mutable_data
+type dir_handle
 (** The type of descriptors over opened directories. *)
 
 val opendir : string @ local -> dir_handle
@@ -892,8 +894,8 @@ val mkfifo : string @ local -> file_perm -> unit
 
 
 val create_process :
-  string @ local -> string array @ local read -> file_descr -> file_descr ->
-    file_descr -> int
+  string @ local -> string array @ local read -> file_descr ->
+  file_descr -> file_descr -> int
 (** [create_process prog args stdin stdout stderr] creates a new process
     that executes the program in file [prog], with arguments [args]. Note that
     the first argument, [args.(0)], is by convention the filename of the
@@ -908,8 +910,9 @@ val create_process :
     process. *)
 
 val create_process_env :
-  string @ local -> string array @ local read -> string array @ local read ->
-  file_descr -> file_descr -> file_descr -> int
+  string @ local -> string array @ local read ->
+  string array @ local read -> file_descr -> file_descr ->
+  file_descr -> int
 (** [create_process_env prog args env stdin stdout stderr]
    works as {!create_process}, except that the extra argument
    [env] specifies the environment passed to the program. *)
@@ -1286,7 +1289,8 @@ val times : unit -> process_times
    On Windows: partially implemented, will not report timings
    for child processes. *)
 
-val utimes : string @ local -> float @ local -> float @ local -> unit
+val utimes :
+  string @ local -> float @ local -> float @ local -> unit
 (** Set the last access time (second arg) and last modification time
    (third arg) for a file. Times are expressed in seconds from
    00:00:00 GMT, Jan. 1, 1970.  If both times are [0.0], the access
@@ -1427,7 +1431,7 @@ val getgrgid : int -> group_entry
 (** {1 Internet addresses} *)
 
 
-type inet_addr : immutable_data
+type inet_addr
 (** The abstract type of Internet addresses. *)
 
 val inet_addr_of_string : string @ local -> inet_addr
@@ -1560,32 +1564,35 @@ type msg_flag =
 (** The flags for {!recv}, {!recvfrom}, {!send} and {!sendto}. *)
 
 val recv :
-  file_descr -> bytes @ local -> int -> int -> msg_flag list @ local -> int
+  file_descr -> bytes @ local -> int -> int ->
+  msg_flag list @ local -> int
 (** Receive data from a connected socket. *)
 
 val recvfrom :
-  file_descr -> bytes @ local -> int -> int -> msg_flag list @ local ->
-    int * sockaddr
+  file_descr -> bytes @ local -> int -> int ->
+  msg_flag list @ local -> int * sockaddr
 (** Receive data from an unconnected socket. *)
 
 val send :
-  file_descr -> bytes @ local read -> int -> int -> msg_flag list @ local -> int
+  file_descr -> bytes @ local read -> int -> int ->
+    msg_flag list @ local -> int
 (** Send data over a connected socket. *)
 
 val send_substring :
-  file_descr -> string @ local -> int -> int -> msg_flag list @ local -> int
+  file_descr -> string @ local -> int -> int ->
+  msg_flag list @ local -> int
 (** Same as [send], but take the data from a string instead of a byte
     sequence.
     @since 4.02 *)
 
 val sendto :
-  file_descr -> bytes @ local read -> int -> int -> msg_flag list @ local ->
-    sockaddr @ local -> int
+  file_descr -> bytes @ local read -> int -> int ->
+    msg_flag list @ local -> sockaddr @ local -> int
 (** Send data over an unconnected socket. *)
 
 val sendto_substring :
-  file_descr -> string @ local -> int -> int -> msg_flag list @ local
-  -> sockaddr @ local -> int
+  file_descr -> string @ local -> int -> int ->
+  msg_flag list @ local -> sockaddr @ local -> int
 (** Same as [sendto], but take the data from a string instead of a
     byte sequence.
     @since 4.02 *)
@@ -1699,8 +1706,8 @@ val shutdown_connection : in_channel -> unit
    connection is over. *)
 
 val establish_server :
-  (in_channel -> out_channel -> unit) @ local -> sockaddr @ local -> unit
-  @@ nonportable
+  (in_channel -> out_channel -> unit) @ local -> sockaddr @ local
+  -> unit @@ nonportable
 (** Establish a server on the given address.
    The function given as first argument is called for each connection
    with two buffered channels connected to the client. A new process
@@ -1766,7 +1773,8 @@ val getservbyname :
 (** Find an entry in [services] with the given name.
     @raise Not_found if no such entry exists. *)
 
-val getservbyport : int -> string @ local -> service_entry @@ nonportable
+val getservbyport :
+  int -> string @ local -> service_entry @@ nonportable
 (** Find an entry in [services] with the given service number.
     @raise Not_found if no such entry exists. *)
 
@@ -1902,7 +1910,8 @@ type setattr_when =
   | TCSADRAIN
   | TCSAFLUSH
 
-val tcsetattr : file_descr -> setattr_when -> terminal_io @ local read -> unit
+val tcsetattr :
+  file_descr -> setattr_when -> terminal_io @ local read -> unit
 (** Set the status of the terminal referred to by the given
    file descriptor. The second argument indicates when the
    status change takes place: immediately ([TCSANOW]),

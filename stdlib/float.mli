@@ -1,4 +1,3 @@
-# 2 "float.mli"
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -14,10 +13,6 @@
 (*   special exception on linking described in the file LICENSE.          *)
 (*                                                                        *)
 (**************************************************************************)
-
-@@ portable
-
-open! Stdlib
 
 (* NOTE:
    If this file is float.template.mli, run tools/sync_stdlib_docs after editing
@@ -55,19 +50,19 @@ val minus_one : float
 (** The floating-point -1.
    @since 4.08 *)
 
-external neg : (float[@local_opt]) -> (float[@local_opt]) = "%negfloat"
+external neg : float -> float = "%negfloat"
 (** Unary negation. *)
 
-external add : (float[@local_opt]) -> (float[@local_opt]) -> (float[@local_opt]) = "%addfloat"
+external add : float -> float -> float = "%addfloat"
 (** Floating-point addition. *)
 
-external sub : (float[@local_opt]) -> (float[@local_opt]) -> (float[@local_opt]) = "%subfloat"
+external sub : float -> float -> float = "%subfloat"
 (** Floating-point subtraction. *)
 
-external mul : (float[@local_opt]) -> (float[@local_opt]) -> (float[@local_opt]) = "%mulfloat"
+external mul : float -> float -> float = "%mulfloat"
 (** Floating-point multiplication. *)
 
-external div : (float[@local_opt]) -> (float[@local_opt]) -> (float[@local_opt]) = "%divfloat"
+external div : float -> float -> float = "%divfloat"
 (** Floating-point division. *)
 
 external fma : float -> float -> float -> float =
@@ -102,7 +97,7 @@ val pred : float -> float
    {!next_after}.
    @since 4.08 *)
 
-external abs : (float[@local_opt]) -> (float[@local_opt]) = "%absfloat"
+external abs : float -> float = "%absfloat"
 (** [abs f] returns the absolute value of [f]. *)
 
 val infinity : float
@@ -168,7 +163,7 @@ val is_integer : float -> bool
 
    @since 4.08 *)
 
-external of_int : int -> (float[@local_opt]) = "%floatofint"
+external of_int : int -> float = "%floatofint"
 (** Convert an integer to floating-point. *)
 
 external to_int : float -> int = "%intoffloat"

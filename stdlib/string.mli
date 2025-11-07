@@ -1,4 +1,4 @@
-# 2 "string.mli"
+# 2 "stringLabels.mli"
 (**************************************************************************)
 (*                                                                        *)
 (*                                 OCaml                                  *)
@@ -74,6 +74,8 @@ v}
     The labeled version of this module can be used as described in the
     {!StdLabels} module.
 *)
+
+[@@@ocaml.nolabels]
 
 (** {1:strings Strings} *)
 
@@ -306,7 +308,7 @@ val iteri : (int -> char -> unit) -> string -> unit
 
 (** {1:searching Searching} *)
 
-val index_from : string -> int -> char -> int
+val index_from : string @ local -> int -> char -> int
 (** [index_from s i c] is the index of the first occurrence of [c] in
     [s] after position [i].
 
@@ -314,39 +316,39 @@ val index_from : string -> int -> char -> int
     @raise Invalid_argument if [i] is not a valid position in [s]. *)
 
 
-val index_from_opt : string -> int -> char -> int option
+val index_from_opt : string @ local -> int -> char -> int option
 (** [index_from_opt s i c] is the index of the first occurrence of [c]
     in [s] after position [i] (if any).
 
     @raise Invalid_argument if [i] is not a valid position in [s].
     @since 4.05 *)
 
-val rindex_from : string -> int -> char -> int
+val rindex_from : string @ local -> int -> char -> int
 (** [rindex_from s i c] is the index of the last occurrence of [c] in
     [s] before position [i+1].
 
     @raise Not_found if [c] does not occur in [s] before position [i+1].
     @raise Invalid_argument if [i+1] is not a valid position in [s]. *)
 
-val rindex_from_opt : string -> int -> char -> int option
+val rindex_from_opt : string @ local -> int -> char -> int option
 (** [rindex_from_opt s i c] is the index of the last occurrence of [c]
     in [s] before position [i+1] (if any).
 
     @raise Invalid_argument if [i+1] is not a valid position in [s].
     @since 4.05 *)
 
-val index : string -> char -> int
+val index : string @ local -> char -> int
 (** [index s c] is {!String.index_from}[ s 0 c]. *)
 
-val index_opt : string -> char -> int option
+val index_opt : string @ local -> char -> int option
 (** [index_opt s c] is {!String.index_from_opt}[ s 0 c].
 
     @since 4.05 *)
 
-val rindex : string -> char -> int
+val rindex : string @ local -> char -> int
 (** [rindex s c] is {!String.rindex_from}[ s (length s - 1) c]. *)
 
-val rindex_opt : string -> char -> int option
+val rindex_opt : string @ local -> char -> int option
 (** [rindex_opt s c] is {!String.rindex_from_opt}[ s (length s - 1) c].
 
     @since 4.05 *)
