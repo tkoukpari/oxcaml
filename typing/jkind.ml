@@ -1918,6 +1918,7 @@ module Const = struct
       |> function
       | None -> None
       | Some modes ->
+        (* CR dkalinichenko: reuse logic from [Typemode]. *)
         (* Handle all the mode implications *)
         let modes =
           match List.mem "global" modes, List.mem "unyielding" modes with
@@ -1934,6 +1935,13 @@ module Const = struct
           match List.mem "global" modes, List.mem "forkable" modes with
           | true, true -> List.filter (fun m -> m <> "forkable") modes
           | true, false -> modes @ ["unforkable"]
+          | _, _ -> modes
+        in
+        let modes =
+          (* Likewise for [global] and [aliased]. *)
+          match List.mem "global" modes, List.mem "aliased" modes with
+          | true, true -> List.filter (fun m -> m <> "aliased") modes
+          | true, false -> assert false (* this case should not happen *)
           | _, _ -> modes
         in
         let modes =
@@ -2792,7 +2800,15 @@ let for_object =
   let comonadic =
     Crossing.Comonadic.always_constructed_at Value.Comonadic.Const.legacy
   in
-  let monadic = Crossing.Monadic.max in
+  let monadic =
+    Crossing.Monadic.create
+      ~uniqueness:(Crossing.Per_axis.min (Crossing.Axis.Monadic Uniqueness))
+        (* Since [global] implies [aliased] in presence of borrowing,
+           objects also cross uniqueness. *)
+      ~contention:(Crossing.Per_axis.max (Crossing.Axis.Monadic Contention))
+      ~visibility:(Crossing.Per_axis.max (Crossing.Axis.Monadic Visibility))
+      ~staticity:(Crossing.Per_axis.max (Crossing.Axis.Monadic Staticity))
+  in
   fresh_jkind
     { layout = Sort (Base Value);
       mod_bounds =
