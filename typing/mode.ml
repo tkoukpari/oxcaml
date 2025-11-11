@@ -4744,4 +4744,10 @@ module Crossing = struct
         Value.Axis.all
     in
     Format.(pp_print_list ~pp_sep:pp_print_space pp_print_string ppf l)
+
+  let to_modality
+      { monadic = Monadic.Modality monadic;
+        comonadic = Comonadic.Modality comonadic
+      } =
+    { monadic; comonadic }
 end

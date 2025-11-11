@@ -1071,6 +1071,10 @@ module type S = sig
     [m] where [T] has mode crossing [t]. *)
     val modality : Modality.Const.t -> t -> t
 
+    (** Takes a mode crossing [t], returns the modality needed to make [max] into [t].
+      More precisely, [to_modality] is the inverse of [modality _ max]. *)
+    val to_modality : t -> Modality.Const.t
+
     (** Apply mode crossing on a left mode, making it stronger. *)
     val apply_left : t -> Value.l -> Value.l
 
