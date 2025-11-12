@@ -214,7 +214,7 @@ let eval code =
   let typed_impl =
     Typemod.type_implementation unit_info compilation_unit env ast
   in
-  let program =
+  let slambda_program =
     Translmod.transl_implementation compilation_unit
       ( typed_impl.structure,
         typed_impl.coercion,
@@ -225,13 +225,14 @@ let eval code =
   in
   Warnings.check_fatal () (* TODO: more error handling? *);
   (* TODO: assert program.arg_block_idx is none? *)
+  let raw_lambda_program = Slambdaeval.eval slambda_program in
   let program =
-    { program with
+    { raw_lambda_program with
       code =
         Simplif.simplify_lambda
           ~restrict_to_upstream_dwarf:!Dwarf_flags.restrict_to_upstream_dwarf
           ~gdwarf_may_alter_codegen:!Dwarf_flags.gdwarf_may_alter_codegen
-          program.code
+          raw_lambda_program.code
     }
   in
   let ppf = Format.make_formatter (fun _ _ _ -> ()) (fun _ -> ()) in
