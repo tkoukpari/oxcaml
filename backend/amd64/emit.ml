@@ -129,6 +129,8 @@ let register_name typ r : X86_ast.arg =
 
 let phys_rax = phys_reg Int 0
 
+let phys_rdi = phys_reg Int 2
+
 let phys_rdx = phys_reg Int 4
 
 let phys_rcx = phys_reg Int 5
@@ -1629,6 +1631,7 @@ let assert_loc (loc : Simd.loc) arg =
   | false -> assert (Simd.loc_allows_mem loc));
   match Simd.loc_is_pinned loc with
   | Some RAX -> assert (Reg.same_loc arg phys_rax)
+  | Some RDI -> assert (Reg.same_loc arg phys_rdi)
   | Some RCX -> assert (Reg.same_loc arg phys_rcx)
   | Some RDX -> assert (Reg.same_loc arg phys_rdx)
   | Some XMM0 -> assert (Reg.same_loc arg (phys_xmm0v ()))
@@ -1749,8 +1752,26 @@ let emit_simd_instr ?mode (simd : Simd.instr) imm instr =
   in
   I.simd simd (Array.of_list args)
 
+(* Only used for instructions that have an implicit memory operand. Explicit
+   load/store operations are sanitized automatically by [emit_simd_instr]. *)
+let emit_implicit_simd_sanitize (op : Simd.operation) instr =
+  if Config.with_address_sanitizer && !Arch.is_asan_enabled
+     && Simd.is_memory_operation op
+  then
+    let simd = Simd.Pseudo_instr.instr op.instr in
+    match[@warning "-4"] simd.id with
+    | Maskmovdqu | Vmaskmovdqu ->
+      let address = addressing identity_addressing VEC128 instr 2 in
+      emit_simd_sanitize ~address ~instr ~chunk:Onetwentyeight_unaligned
+        ~kind:Store_modify
+    | _ ->
+      (* Must handle all impure cases in [Simd.class_of_operation] *)
+      Misc.fatal_errorf
+        "Don't know how to sanitize implicit memory operand of %s" simd.mnemonic
+
 let emit_simd ?mode (op : Simd.operation) instr =
   let open Simd_instrs in
+  emit_implicit_simd_sanitize op instr;
   let imm = op.imm in
   match op.instr with
   | Instruction simd -> emit_simd_instr ?mode simd imm instr
