@@ -206,6 +206,7 @@ module Hint_for_solver (* : Solver_intf.Hint *) = struct
          | Tailcall_argument -> Tailcall_argument
          | Function_return -> Function_return
          | Module_allocated_on_heap -> Module_allocated_on_heap
+         | Is_used_in pp -> Is_used_in pp
 
       let disallow_left : type l r. (l * r) t -> (disallowed * r) t =
         fun (type l r) (h : (l * r) t) : (disallowed * r) t ->
@@ -222,6 +223,7 @@ module Hint_for_solver (* : Solver_intf.Hint *) = struct
          | Function_return -> Function_return
          | Stack_expression -> Stack_expression
          | Module_allocated_on_heap -> Module_allocated_on_heap
+         | Is_used_in pp -> Is_used_in pp
 
       let disallow_right : type l r. (l * r) t -> (l * disallowed) t =
         fun (type l r) (h : (l * r) t) : (l * disallowed) t ->
@@ -238,6 +240,7 @@ module Hint_for_solver (* : Solver_intf.Hint *) = struct
          | Function_return -> Function_return
          | Stack_expression -> Stack_expression
          | Module_allocated_on_heap -> Module_allocated_on_heap
+         | Is_used_in pp -> Is_used_in pp
     end)
   end
 end
@@ -2027,6 +2030,62 @@ module Report = struct
 
   open Format
 
+  type sound =
+    | Consonant
+    | Vowel
+
+  let print_article_noun ~definite ~capitalize sound s =
+    let article =
+      match definite, sound with
+      | true, _ -> "the"
+      | false, Consonant -> "a"
+      | false, Vowel -> "an"
+    in
+    let article =
+      if capitalize then String.capitalize_ascii article else article
+    in
+    dprintf "%s %s" article s
+
+  let print_lock_item : lock_item -> _ = function
+    | Module -> print_article_noun Consonant "module"
+    | Class -> print_article_noun Consonant "class"
+    | Value -> print_article_noun Consonant "value"
+    | Constructor -> print_article_noun Consonant "constructor"
+
+  let print_pinpoint_desc : pinpoint_desc -> _ = function
+    | Unknown -> None
+    | Ident { category; lid } ->
+      Some
+        (fun ~definite ~capitalize ->
+          dprintf "%t %a"
+            (print_lock_item ~definite ~capitalize category)
+            (Misc.Style.as_inline_code !print_longident)
+            lid)
+    | Function -> Some (print_article_noun Consonant "function")
+    | Functor -> Some (print_article_noun Consonant "functor")
+    | Lazy -> Some (print_article_noun Consonant "lazy expression")
+    | Expression -> Some (print_article_noun Vowel "expression")
+    | Allocation -> Some (print_article_noun Vowel "allocation")
+    | Class -> Some (print_article_noun Consonant "class")
+    | Object -> Some (print_article_noun Vowel "object")
+    | Loop -> Some (print_article_noun Consonant "loop")
+    | Letop -> Some (print_article_noun Consonant "letop")
+
+  let print_pinpoint : pinpoint -> _ =
+   fun (loc, desc) ->
+    print_pinpoint_desc desc
+    |> Option.map (fun print_desc ~definite ~capitalize ppf ->
+           match Location.is_none loc, definite with
+           | true, _ -> print_desc ~definite:false ~capitalize ppf
+           | false, true ->
+             fprintf ppf "%t at %a"
+               (print_desc ~definite ~capitalize)
+               Location.print_loc loc
+           | false, false ->
+             fprintf ppf "%t (at %a)"
+               (print_desc ~definite ~capitalize)
+               Location.print_loc loc)
+
   let print_mutable_part ppf = function
     | Record_field s -> fprintf ppf "mutable field %a" Misc.Style.inline_code s
     | Array_elements -> fprintf ppf "array elements"
@@ -2075,34 +2134,10 @@ module Report = struct
         pp_print_string ppf "modules always need"
       | _ -> pp_print_string ppf "it is a module and thus needs");
       pp_print_string ppf " to be allocated on the heap"
-
-  let print_lock_item ppf : lock_item -> _ = function
-    | Module -> fprintf ppf "module"
-    | Class -> fprintf ppf "class"
-    | Value -> fprintf ppf "value"
-    | Constructor -> fprintf ppf "constructor"
-
-  let print_pinpoint_desc : pinpoint_desc -> (formatter -> unit) option =
-    function
-    | Unknown -> None
-    | Ident { category; lid } ->
-      Some
-        (dprintf "%a %a" print_lock_item category
-           (Misc.Style.as_inline_code !print_longident)
-           lid)
-    | Function -> Some (dprintf "function")
-    | Functor -> Some (dprintf "functor")
-    | Lazy -> Some (dprintf "lazy expression")
-    | Expression -> Some (dprintf "expression")
-    | Allocation -> Some (dprintf "allocation")
-
-  let print_pinpoint : pinpoint -> (formatter -> unit) option =
-   fun (loc, desc) ->
-    print_pinpoint_desc desc
-    |> Option.map (fun print_desc ppf ->
-           if Location.is_none loc
-           then fprintf ppf "a %t" print_desc
-           else fprintf ppf "the %t at %a" print_desc Location.print_loc loc)
+    | Is_used_in pp ->
+      let print_pp = print_pinpoint pp |> Option.get in
+      fprintf ppf "it is used in %t"
+        (print_pp ~definite:false ~capitalize:false)
 
   let print_allocation_l : allocation -> formatter -> unit =
    fun { txt; loc } ->
@@ -2140,6 +2175,7 @@ module Report = struct
    fun { containing; contained } ->
     print_pinpoint contained
     |> Option.map (fun print_pp ->
+           let print_pp = print_pp ~definite:true ~capitalize:false in
            let pr =
              match containing with
              | Tuple -> dprintf "is a tuple that contains %t" print_pp
@@ -2182,14 +2218,22 @@ module Report = struct
     | Unknown | Unknown_non_rigid -> None
     | Close_over (Comonadic, { closed = pp; _ }) ->
       print_pinpoint pp
-      |> Option.map (fun print_pp -> dprintf "closes over %t" print_pp, pp)
+      |> Option.map (fun print_pp ->
+             ( dprintf "closes over %t"
+                 (print_pp ~definite:true ~capitalize:false),
+               pp ))
     | Close_over (Monadic, { closed = pp; _ }) ->
       print_pinpoint pp
       |> Option.map (fun print_pp ->
-             dprintf "contains a usage (of %t)" print_pp, pp)
+             ( dprintf "contains a usage (of %t)"
+                 (print_pp ~definite:true ~capitalize:false),
+               pp ))
     | Is_closed_by (_, { closure = pp; _ }) ->
       print_pinpoint pp
-      |> Option.map (fun print_pp -> dprintf "is used inside %t" print_pp, pp)
+      |> Option.map (fun print_pp ->
+             ( dprintf "is used inside %t"
+                 (print_pp ~definite:true ~capitalize:false),
+               pp ))
     | Captured_by_partial_application ->
       Some
         ( dprintf "is captured by a partial application",
@@ -2334,6 +2378,8 @@ module Report = struct
     { left; right }
 end
 
+let print_pinpoint = Report.print_pinpoint
+
 type changes = S.changes
 
 let undo_changes = S.undo_changes
@@ -2381,7 +2427,7 @@ module Error = struct
       (let print_desc =
          match print_desc with
          | None -> dprintf "This"
-         | Some print_desc -> dprintf "The %t" print_desc
+         | Some print_desc -> print_desc ~definite:true ~capitalize:true
        in
        fprintf ppf "%t is " print_desc);
       let ({ left; right } : print_error) = print_packed pp packed in
@@ -2390,7 +2436,9 @@ module Error = struct
         let print_desc =
           match print_desc with
           | None -> dprintf "the highlighted"
-          | Some print_desc -> dprintf "the highlighted %t" print_desc
+          | Some print_desc ->
+            dprintf "%t highlighted"
+              (print_desc ~definite:true ~capitalize:false)
         in
         fprintf ppf ".@\nHowever, %t is expected to be " print_desc
       | Mode -> fprintf ppf "@ but is expected to be ");
@@ -3344,6 +3392,8 @@ module Value_with (Areality : Areality) = struct
     t |> unhint |> f |> hint ?monadic ?comonadic
 
   module Const = struct
+    let comonadic_to_monadic_min = C.comonadic_to_monadic_min Comonadic.Obj.obj
+
     module Monadic = Monadic.Const
     module Comonadic = Comonadic.Const
 

@@ -1,26 +1,5 @@
 open Allowance
 
-type mutable_part =
-  | Record_field of string
-  | Array_elements
-
-(** Hint for a constant bound. See [Mode.Report.print_const] for what each non-trivial constructor means. *)
-type 'd const =
-  | Unknown : ('l * 'r) const  (** The constant bound is not explained. *)
-  | Lazy_allocated_on_heap : (disallowed * 'r) pos const
-  | Class_legacy_monadic : ('l * disallowed) neg const
-  | Class_legacy_comonadic : ('l * disallowed) pos const
-  | Tailcall_function : (disallowed * 'r) pos const
-  | Tailcall_argument : (disallowed * 'r) pos const
-  | Mutable_read : mutable_part -> (disallowed * 'r) neg const
-  | Mutable_write : mutable_part -> (disallowed * 'r) neg const
-  | Lazy_forced : (disallowed * 'r) neg const
-  | Function_return : (disallowed * 'r) pos const
-  | Stack_expression : ('l * disallowed) pos const
-  | Module_allocated_on_heap : (disallowed * 'r) pos const
-  constraint 'd = _ * _
-[@@ocaml.warning "-62"]
-
 (** A description of what type of item is being closed over *)
 type lock_item =
   | Value
@@ -45,9 +24,37 @@ type pinpoint_desc =
   | Lazy  (** A lazy expression *)
   | Allocation  (** An allocation *)
   | Expression  (** An arbitrary expression *)
+  | Class  (** An class declaration *)
+  | Object  (** An object declaration *)
+  | Loop  (** a loop *)
+  | Letop  (** let op *)
 
 (** A pinpoint is a location in the source code, accompanied by additional description *)
 type pinpoint = Location.t * pinpoint_desc
+
+type mutable_part =
+  | Record_field of string
+  | Array_elements
+
+(** Hint for a constant bound. See [Mode.Report.print_const] for what each non-trivial constructor means. *)
+type 'd const =
+  | Unknown : ('l * 'r) const  (** The constant bound is not explained. *)
+  | Lazy_allocated_on_heap : (disallowed * 'r) pos const
+  | Class_legacy_monadic : ('l * disallowed) neg const
+  | Class_legacy_comonadic : ('l * disallowed) pos const
+  | Tailcall_function : (disallowed * 'r) pos const
+  | Tailcall_argument : (disallowed * 'r) pos const
+  | Mutable_read : mutable_part -> (disallowed * 'r) neg const
+  | Mutable_write : mutable_part -> (disallowed * 'r) neg const
+  | Lazy_forced : (disallowed * 'r) neg const
+  | Function_return : (disallowed * 'r) pos const
+  | Stack_expression : ('l * disallowed) pos const
+  | Module_allocated_on_heap : (disallowed * 'r) pos const
+  | Is_used_in : pinpoint -> (disallowed * 'r) const
+      (** A variant of [Is_closed_by] where the closure mode is constant.
+        INVARIANT: The [pinpoint] cannot be [Unknown]. *)
+  constraint 'd = _ * _
+[@@ocaml.warning "-62"]
 
 type ('d0, 'd1) polarity =
   | Monadic : ('l * 'r, 'r * 'l) polarity

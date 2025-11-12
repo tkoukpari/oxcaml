@@ -258,6 +258,12 @@ module type S = sig
 
   module Hint = Mode_hint
 
+  (** Prints a [pinpoint]. Say "a foo" if [definite] is [false], say "the foo"
+      otherwise. Defaults to the latter. *)
+  val print_pinpoint :
+    Hint.pinpoint ->
+    (definite:bool -> capitalize:bool -> Format.formatter -> unit) option
+
   type nonrec 'a simple_error = 'a simple_error
 
   type changes
@@ -649,6 +655,9 @@ module type S = sig
 
       (** Similar to [Alloc.partial_apply] but for constants *)
       val partial_apply : t -> Comonadic.Const.t
+
+      (** Similar to [comonadic_to_monadic_min] but for constants *)
+      val comonadic_to_monadic_min : Comonadic.Const.t -> Monadic.Const.t
 
       (** Prints a constant on any axis. *)
       val print_axis : 'a Axis.t -> Format.formatter -> 'a -> unit
