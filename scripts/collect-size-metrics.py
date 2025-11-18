@@ -32,7 +32,7 @@ def collect_metrics(install_dir: str, output_dir: str, commit_hash: str,
     # Create output directory and compute CSV filename
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    csv_path = output_path / f"metrics-{date_str}-{short_hash}.csv"
+    csv_path = output_path / f"artifact-sizes-{date_str}-{short_hash}.csv"
 
     # Extensions to track
     extensions = [
@@ -44,15 +44,15 @@ def collect_metrics(install_dir: str, output_dir: str, commit_hash: str,
         # Write CSV header
         csv_file.write("timestamp,commit_hash,pr_number,kind,name,value\n")
 
-        # Collect metrics for each extension
+        # Collect metrics for each artifact
         kind = "size_in_bytes"
         for ext in extensions:
             files = list(install_path.rglob(f"*.{ext}"))
-            total_size = sum(file.stat().st_size for file in files
-                           if file.is_file())
-
-            # Write to CSV
-            csv_file.write(f"{timestamp},{commit_hash},{pr_number},{kind},{ext},{total_size}\n")
+            for file in files:
+                if file.is_file():
+                    size = file.stat().st_size
+                    relative_path = file.relative_to(install_path)
+                    csv_file.write(f"{timestamp},{commit_hash},{pr_number},{kind},{relative_path},{size}\n")
 
     print(f"Generated metrics file: {csv_path}")
     print(f"Metrics collected for commit: {commit_hash}")
@@ -69,18 +69,22 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Collect file size metrics from install directory"
     )
-    parser.add_argument("install_directory", help="Path to install directory")
-    parser.add_argument("output_directory", help="Output directory for CSV file")
-    parser.add_argument("commit_hash", help="Git commit hash")
-    parser.add_argument("commit_message", help="Git commit message")
+    parser.add_argument("--install-dir", required=True,
+                        help="Path to install directory")
+    parser.add_argument("--output-dir", required=True,
+                        help="Output directory for CSV file")
+    parser.add_argument("--commit-hash", required=True,
+                        help="Git commit hash")
+    parser.add_argument("--commit-message", required=True,
+                        help="Git commit message")
     parser.add_argument("--verbose", action="store_true",
                         help="Print contents of generated CSV file")
 
     args = parser.parse_args()
 
     collect_metrics(
-        args.install_directory,
-        args.output_directory,
+        args.install_dir,
+        args.output_dir,
         args.commit_hash,
         args.commit_message,
         args.verbose
