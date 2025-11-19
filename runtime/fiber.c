@@ -380,7 +380,12 @@ value caml_alloc_stack_bind (value hval, value hexn, value heff, value dyn, valu
     alloc_size_class_stack_noexc(caml_fiber_wsz, 0 /* first bucket */,
                                  hval, hexn, heff, dyn, val, id);
 
-  if (!stack) caml_raise_out_of_memory();
+  if (!stack)
+#if defined(USE_MMAP_MAP_STACK) || defined(STACK_GUARD_PAGES)
+    caml_raise_out_of_fibers();
+#else
+    caml_raise_out_of_memory();
+#endif
 
   fiber_debug_log ("Allocate stack=%p of %" ARCH_INTNAT_PRINTF_FORMAT
                      "u words", stack, caml_fiber_wsz);
@@ -691,7 +696,12 @@ CAMLprim value caml_alloc_stack_bind(value hval, value hexn, value heff,
     alloc_size_class_stack_noexc(caml_fiber_wsz, 0 /* first bucket */,
                                  hval, hexn, heff, dyn, val, id);
 
-  if (!stack) caml_raise_out_of_memory();
+  if (!stack)
+#if defined(USE_MMAP_MAP_STACK) || defined(STACK_GUARD_PAGES)
+    caml_raise_out_of_fibers();
+#else
+    caml_raise_out_of_memory();
+#endif
 
   sp = Stack_high(stack);
   sp -= 1;
