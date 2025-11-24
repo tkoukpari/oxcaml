@@ -268,8 +268,9 @@ let initial_env ~loc ~initially_opened_module
       units
       env
   in
+  let { Load_path.dirs; basenames } = Load_path.get_visible () in
   let units =
-    List.map Env.persistent_structures_of_dir (Load_path.get_visible ())
+    List.map Env.persistent_structures_of_dir (dirs)
   in
   let env, units =
     match initially_opened_module with
@@ -297,6 +298,12 @@ let initial_env ~loc ~initially_opened_module
         (open_module env m, units)
   in
   let env = List.fold_left add_units env units in
+  (* Adding [basenames] after [initially_opened_module] check, since the
+     [initially_opened_module] cannot come from [basenames] (hence no need to
+     search for it in there). *)
+  let units_from_filenames =
+    Env.persistent_structures_of_basenames basenames in
+  let env = add_units env units_from_filenames in
   List.fold_left open_module env open_implicit_modules
 
 let type_open_descr ?used_slot ?toplevel env sod =
