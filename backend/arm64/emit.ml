@@ -1059,7 +1059,7 @@ let num_call_gc_points instr =
         | Dls_get | Tls_get | Const_int _ | Const_float32 _ | Const_float _
         | Const_symbol _ | Const_vec128 _ | Stackoffset _ | Load _
         | Store (_, _, _)
-        | Intop _
+        | Intop _ | Int128op _
         | Intop_imm (_, _)
         | Intop_atomic _
         | Floatop (_, _)
@@ -1132,7 +1132,7 @@ module BR = Branch_relaxation.Make (struct
           | Const_float _ | Const_symbol _ | Const_vec128 _ | Stackoffset _
           | Load _
           | Store (_, _, _)
-          | Intop _
+          | Intop _ | Int128op _
           | Intop_imm (_, _)
           | Intop_atomic _
           | Floatop (_, _)
@@ -1239,6 +1239,7 @@ module BR = Branch_relaxation.Make (struct
     | Lop (Floatop (Float64, Icompf _)) -> 2
     | Lop (Floatop (Float32, Icompf _)) -> 2
     | Lop (Intop_imm (Icomp _, _)) -> 2
+    | Lop (Int128op (Iadd128 | Isub128 | Imul64 _)) -> 2
     | Lop (Intop Imod) -> 2
     | Lop (Intop (Imulh _)) -> 1
     | Lop (Intop (Iclz _)) -> 1
@@ -1991,6 +1992,9 @@ let emit_instr i =
          DSL.emit_reg i.arg.(0);
          DSL.emit_reg i.arg.(1)
       |]
+  | Lop (Int128op _) ->
+    (* CR mslater: restore after the arm DSL is merged *)
+    Misc.fatal_error "arm64: got int128 op"
   | Lop (Intop Ipopcnt) ->
     if !Arch.feat_cssc
     then DSL.ins I.CNT [| DSL.emit_reg i.res.(0); DSL.emit_reg i.arg.(0) |]

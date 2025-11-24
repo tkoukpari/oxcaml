@@ -2101,6 +2101,14 @@ let emit_instr ~first ~fallthrough i =
   | Lop (Intop (Idiv | Imod)) ->
     I.cqo ();
     I.idiv (arg i 1)
+  | Lop (Int128op Iadd128) ->
+    I.add (arg i 2) (res i 0);
+    I.adc (arg i 3) (res i 1)
+  | Lop (Int128op Isub128) ->
+    I.sub (arg i 2) (res i 0);
+    I.sbb (arg i 3) (res i 1)
+  | Lop (Int128op (Imul64 { signed = true })) -> I.imul (arg i 1) None
+  | Lop (Int128op (Imul64 { signed = false })) -> I.mul (arg i 1)
   | Lop (Intop ((Ilsl | Ilsr | Iasr) as op)) ->
     (* We have i.arg.(0) = i.res.(0) and i.arg.(1) = %rcx *)
     instr_for_intop op cl (res i 0)
