@@ -3,12 +3,15 @@
 
 BUILTIN(caml_sse_vec128_load_aligned);
 BUILTIN(caml_sse_vec128_load_unaligned);
+BUILTIN(caml_sse3_vec128_load_known_unaligned);
 BUILTIN(caml_sse_vec128_store_aligned);
 BUILTIN(caml_sse_vec128_store_unaligned);
 BUILTIN(caml_avx_vec256_load_aligned);
 BUILTIN(caml_avx_vec256_load_unaligned);
+BUILTIN(caml_avx_vec256_load_known_unaligned);
 BUILTIN(caml_avx_vec256_store_aligned);
 BUILTIN(caml_avx_vec256_store_unaligned);
+
 BUILTIN(caml_sse_vec128_store_aligned_uncached);
 BUILTIN(caml_sse2_vec128_load_low64);
 BUILTIN(caml_sse2_vec128_load_low32);
@@ -37,6 +40,14 @@ BUILTIN(caml_avx_vec128_store_mask64);
 BUILTIN(caml_avx_vec256_store_mask64);
 BUILTIN(caml_avx_vec128_store_mask32);
 BUILTIN(caml_avx_vec256_store_mask32);
+BUILTIN(caml_avx2_vec128_gather32_index32);
+BUILTIN(caml_avx2_vec256_gather32_index32);
+BUILTIN(caml_avx2_vec128_gather32_index64);
+BUILTIN(caml_avx2_vec256_gather32_index64);
+BUILTIN(caml_avx2_vec128_gather64_index32);
+BUILTIN(caml_avx2_vec256_gather64_index32);
+BUILTIN(caml_avx2_vec128_gather64_index64);
+BUILTIN(caml_avx2_vec256_gather64_index64);
 
 BUILTIN(caml_sse2_float64_add);
 BUILTIN(caml_sse2_float64_sub);
