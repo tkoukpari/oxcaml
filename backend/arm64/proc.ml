@@ -73,8 +73,8 @@ let hard_reg_gen typ =
 let hard_int_reg = hard_reg_gen Int
 let hard_float_reg = hard_reg_gen Float
 
-let hard_vec128_reg = Array.map (fun r -> {r with typ = Vec128}) hard_float_reg
-let hard_float32_reg = Array.map (fun r -> {r with typ = Float32}) hard_float_reg
+let hard_vec128_reg = Array.map (Reg.create_alias ~typ:Vec128) hard_float_reg
+let hard_float32_reg = Array.map (Reg.create_alias ~typ:Float32) hard_float_reg
 
 let all_phys_regs =
   Array.concat [hard_int_reg; hard_float_reg; hard_float32_reg; hard_vec128_reg; ]
@@ -90,9 +90,10 @@ let phys_reg ty n =
        for the LLVM backend. However, this breaks an invariant the IRC register
        allocator relies on. It is safe to guard it with this flag since the LLVM
        backend doesn't get that far. *)
+    let r = hard_int_reg.(n) in
     if !Clflags.llvm_backend
-    then { hard_int_reg.(n) with typ = ty }
-    else hard_int_reg.(n)
+    then Reg.create_alias r ~typ:ty
+    else r
   | Float -> hard_float_reg.(n - 100)
   | Float32 -> hard_float32_reg.(n - 100)
   | Vec128 | Valx2 -> hard_vec128_reg.(n - 100)
