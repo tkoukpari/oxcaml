@@ -365,6 +365,11 @@ let mk_ddwarf_metrics f =
     " Write DWARF metrics to auxiliary JSON file .debug-stats.json, which can \
      then be aggregated with the analyze_debug_stats.py Python script." )
 
+let mk_ddwarf_metrics_output_file f =
+  ( "-ddwarf-metrics-output-file",
+    Arg.String f,
+    "<file>  Set output filename for DWARF metrics data" )
+
 let mk_internal_assembler f =
   ( "-internal-assembler",
     Arg.Unit f,
@@ -1045,6 +1050,7 @@ module type Oxcaml_options = sig
   val ddebug_available_regs : unit -> unit
   val ddwarf_types : unit -> unit
   val ddwarf_metrics : unit -> unit
+  val ddwarf_metrics_output_file : string -> unit
   val dcfg : unit -> unit
   val dcfg_invariants : unit -> unit
   val regalloc : Clflags.Register_allocator.t -> unit
@@ -1188,6 +1194,7 @@ module Make_oxcaml_options (F : Oxcaml_options) = struct
       mk_ddebug_available_regs F.ddebug_available_regs;
       mk_ddwarf_types F.ddwarf_types;
       mk_ddwarf_metrics F.ddwarf_metrics;
+      mk_ddwarf_metrics_output_file F.ddwarf_metrics_output_file;
       mk_ocamlcfg F.ocamlcfg;
       mk_no_ocamlcfg F.no_ocamlcfg;
       mk_dcfg F.dcfg;
@@ -1421,6 +1428,10 @@ module Oxcaml_options_impl = struct
   let ddebug_available_regs = set' Dwarf_flags.ddebug_available_regs
   let ddwarf_types = set' Dwarf_flags.ddwarf_types
   let ddwarf_metrics = set' Dwarf_flags.ddwarf_metrics
+
+  let ddwarf_metrics_output_file s =
+    Dwarf_flags.ddwarf_metrics_output_file := Some s
+
   let heap_reduction_threshold x = Oxcaml_flags.heap_reduction_threshold := x
 
   let zero_alloc_check s =
@@ -1888,6 +1899,9 @@ module Extra_params = struct
     | "ddebug-available-regs" -> set' Dwarf_flags.ddebug_available_regs
     | "ddwarf-types" -> set' Dwarf_flags.ddwarf_types
     | "ddwarf-metrics" -> set' Dwarf_flags.ddwarf_metrics
+    | "ddwarf-metrics-output-file" ->
+        Dwarf_flags.ddwarf_metrics_output_file := Some v;
+        true
     | "reorder-blocks-random" ->
         set_int_option' Oxcaml_flags.reorder_blocks_random
     | "basic-block-sections" -> set' Oxcaml_flags.basic_block_sections
