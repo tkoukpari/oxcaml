@@ -789,11 +789,19 @@ let output_to_file_via_temporary ?(mode = [Open_text]) filename fn =
   | exception exn ->
       close_out oc; remove_file temp_filename; raise exn
 
-let protect_writing_to_file ~filename ~f =
+let successful_output_files = ref []
+
+let protect_output_to_file filename f =
   let outchan = open_out_bin filename in
   try_finally ~always:(fun () -> close_out outchan)
     ~exceptionally:(fun () -> remove_file filename)
-    (fun () -> f outchan)
+    (fun () ->
+      let a = f outchan in
+      successful_output_files := filename :: !successful_output_files;
+      a)
+
+let remove_successful_output_files () =
+  List.iter remove_file !successful_output_files; successful_output_files := []
 
 let prng = lazy(Random.State.make_self_init ())
 
