@@ -22,6 +22,7 @@ jobs:
           - name: runtime5 (x86_64-linux)
             config: --enable-runtime5
             os: warp-ubuntu-latest-x64-8x
+            build_debug: true
 
           - name: runtime5 stack-checks (x86_64-linux)
             config: --enable-runtime5 --enable-stack-checks
@@ -396,6 +397,10 @@ jobs:
       - name: Check other architectures
         if: matrix.check_arch == true
         run: make check_all_arches
+
+      - name: Build debug target
+        if: matrix.build_debug == true
+        run: make debug
 
       - name: Run register allocation on artifacts
         if: matrix.run_regalloc_tool == true
