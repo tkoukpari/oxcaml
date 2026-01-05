@@ -146,9 +146,15 @@ let fmt_index_kind f = function
   | Index_unboxed_int8 -> fprintf f "Index_unboxed_int8"
   | Index_unboxed_nativeint -> fprintf f "Index_unboxed_nativeint"
 
+let fmt_label_ambiguity f = function
+  | Ambiguous { path; arity } ->
+    fprintf f "Ambiguous %a %d" fmt_path path arity
+  | Unambiguous ->
+    fprintf f "Unambiguous"
+
 let fmt_type_inspection f = function
-  | Label_disambiguation ->
-    fprintf f "Label_disambiguation"
+  | Label_disambiguation amb ->
+    fprintf f "Label_disambiguation %a" fmt_label_ambiguity amb
   | Polymorphic_parameter ->
     fprintf f "Polymorphic_parameter"
 
@@ -445,8 +451,8 @@ and pattern_extra i ppf (extra_pat, _, attrs) =
      attributes i ppf attrs;
   | Tpat_inspected_type ti ->
      line i ppf "Tpat_inspected_type\n";
-      attributes i ppf attrs;
-      line (i+1) ppf "%a\n" fmt_type_inspection ti;
+     attributes i ppf attrs;
+     line (i+1) ppf "%a\n" fmt_type_inspection ti;
 
 and function_body i ppf (body : function_body) =
   match[@warning "+9"] body with
