@@ -182,8 +182,8 @@ Error: Modules do not match: sig val f : unit -> unit end @ nonportable
      is not included in
        val f : unit -> unit (* in a structure at portable *)
      The left-hand side is "nonportable"
-     because it contains a usage (of the value "r" at Line 2, characters 40-41)
-     which is expected to be "uncontended".
+       because it contains a usage (of the value "r" at Line 2, characters 40-41)
+       which is expected to be "uncontended".
      However, the right-hand side is "portable".
 |}]
 
@@ -279,8 +279,8 @@ Error: Signature mismatch in included functor's parameter:
        is not included in
          val f : unit -> unit (* in a structure at portable *)
        The left-hand side is "nonportable"
-       because it contains a usage (of the value "r" at Line 2, characters 40-41)
-       which is expected to be "uncontended".
+         because it contains a usage (of the value "r" at Line 2, characters 40-41)
+         which is expected to be "uncontended".
        However, the right-hand side is "portable".
 |}]
 
@@ -676,9 +676,10 @@ let test2 (x @ once) : (unit -> unit) @ many =
 Line 2, characters 21-22:
 2 |   fun () -> let _x = x in ()
                          ^
-Error: The value "x" is "once" but is expected to be "many"
-       because it is used inside the function at Line 2, characters 2-28
-       which is expected to be "many".
+Error: The value "x" is "once"
+       but is expected to be "many"
+         because it is used inside the function at Line 2, characters 2-28
+         which is expected to be "many".
 |}]
 
 module F2 (M1 : S @ once) : (functor () -> sig end) @ many =
@@ -687,9 +688,10 @@ module F2 (M1 : S @ once) : (functor () -> sig end) @ many =
 Line 2, characters 35-37:
 2 |   functor () -> struct module M2 = M1 end
                                        ^^
-Error: The module "M1" is "once" but is expected to be "many"
-       because it is used inside the functor at Line 2, characters 10-41
-       which is expected to be "many".
+Error: The module "M1" is "once"
+       but is expected to be "many"
+         because it is used inside the functor at Line 2, characters 10-41
+         which is expected to be "many".
 |}]
 
 (* testing functor type inclusion *)
