@@ -1187,28 +1187,31 @@ let close_primitive acc env ~let_bound_ids_with_kinds named
       | Some exn_continuation -> exn_continuation
     in
     close_raise0 acc env ~raise_kind ~arg ~dbg exn_continuation
-  | ( ( Pmakeblock _ | Pmakefloatblock _ | Pmakeufloatblock _ | Pmakearray _
-      | Pmakemixedblock _ ),
-      [] ) ->
+  | (Pmakeblock _ | Pmakefloatblock _ | Pmakeufloatblock _ | Pmakearray _), []
+    ->
     (* Special case for liftable empty block or array *)
     let acc, sym =
       match prim with
-      | Pmakeblock (tag, _, _, _mode) ->
+      | Pmakeblock (tag, _, shape, _mode) ->
         if tag <> 0
         then
           (* There should not be any way to reach this from Ocaml code. *)
           Misc.fatal_error
             "Non-zero tag on empty block allocation in [Closure_conversion]"
-        else
-          register_const0 acc
-            (Static_const.block Tag.Scannable.zero Immutable Value_only [])
-            "empty_block"
+        else begin
+          if Lambda.is_uniform_block_shape shape
+          then
+            register_const0 acc
+              (Static_const.block Tag.Scannable.zero Immutable Value_only [])
+              "empty_block"
+          else
+            Misc.fatal_error
+              "Unexpected empty mixed block in [Closure_conversion]"
+        end
       | Pmakefloatblock _ ->
         Misc.fatal_error "Unexpected empty float block in [Closure_conversion]"
       | Pmakeufloatblock _ ->
         Misc.fatal_error "Unexpected empty float# block in [Closure_conversion]"
-      | Pmakemixedblock _ ->
-        Misc.fatal_error "Unexpected empty mixed block in [Closure_conversion]"
       | Pmakearray (array_kind, _, _mode) ->
         let array_kind = Empty_array_kind.of_lambda array_kind in
         register_const0 acc (Static_const.empty_array array_kind) "empty_array"
