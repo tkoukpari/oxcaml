@@ -294,7 +294,7 @@ let pat_extra sub = function
   | Tpat_type (path,loc) -> Tpat_type (path, map_loc sub loc)
   | Tpat_open (path,loc,env) ->
       Tpat_open (path, map_loc sub loc, sub.env sub env)
-  | Tpat_constraint ct -> Tpat_constraint (sub.typ sub ct)
+  | Tpat_constraint (ct, ma) -> Tpat_constraint (sub.typ sub ct, ma)
   | Tpat_inspected_type (Label_disambiguation _) as d -> d
   | Tpat_inspected_type Polymorphic_parameter as d -> d
 
@@ -409,7 +409,7 @@ let function_body sub body =
       let fc_loc = sub.location sub fc_loc in
       let fc_attributes = sub.attributes sub fc_attributes in
       let fc_cases = List.map (sub.case sub) fc_cases in
-      let fc_exp_extra = Option.map (extra sub) fc_exp_extra in
+      let fc_exp_extra = List.map (extra sub) fc_exp_extra in
       let fc_env = sub.env sub fc_env in
       Tfunction_cases
         { fc_cases; fc_partial; fc_param; fc_param_debug_uid;
@@ -834,11 +834,11 @@ let module_expr sub x =
     | Tmod_constraint (mexpr, mt, Tmodtype_implicit, c) ->
         Tmod_constraint (sub.module_expr sub mexpr, mt, Tmodtype_implicit,
                          sub.module_coercion sub c)
-    | Tmod_constraint (mexpr, mt, Tmodtype_explicit mtype, c) ->
+    | Tmod_constraint (mexpr, mt, Tmodtype_explicit (mtype, annot), c) ->
         Tmod_constraint (
           sub.module_expr sub mexpr,
           mt,
-          Tmodtype_explicit (sub.module_type sub mtype),
+          Tmodtype_explicit (sub.module_type sub mtype, annot),
           sub.module_coercion sub c
         )
     | Tmod_unpack (exp, mty) ->
@@ -962,8 +962,8 @@ let typ sub x =
     | (Ttyp_var (_,None) | Ttyp_call_pos) as d -> d
     | Ttyp_var (s, Some jkind) ->
         Ttyp_var (s, Some (sub.jkind_annotation sub jkind))
-    | Ttyp_arrow (label, ct1, ct2) ->
-        Ttyp_arrow (label, sub.typ sub ct1, sub.typ sub ct2)
+    | Ttyp_arrow (label, ct1, annot1, ct2, annot2) ->
+        Ttyp_arrow (label, sub.typ sub ct1, annot1, sub.typ sub ct2, annot2)
     | Ttyp_tuple list ->
         Ttyp_tuple (List.map (fun (label, t) -> label, sub.typ sub t) list)
     | Ttyp_unboxed_tuple list ->

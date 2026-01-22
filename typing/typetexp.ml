@@ -733,8 +733,8 @@ let get_type_param_name styp =
 let rec extract_params styp =
   match styp.ptyp_desc with
   | Ptyp_arrow (l, a, r, ma, mr) ->
-      let _, arg_mode = Typemode.transl_alloc_mode ma in
-      let _, ret_mode = Typemode.transl_alloc_mode mr in
+      let arg_mode = Typemode.transl_alloc_mode ma in
+      let ret_mode = Typemode.transl_alloc_mode mr in
       let params, ret, ret_mode =
         match r.ptyp_desc with
         | Ptyp_arrow _ when not (Builtin_attributes.has_curry r.ptyp_attributes) ->
@@ -849,13 +849,14 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
           let arg_cty =
             if Btype.is_position l then
               ctyp Ttyp_call_pos (newconstr Predef.path_lexing_position [])
-            else transl_type env ~policy ~row_context arg_mode arg
+            else transl_type env ~policy ~row_context arg_mode.mode_modes arg
           in
-          let acc_mode = curry_mode acc_mode arg_mode in
+          let acc_mode = curry_mode acc_mode arg_mode.mode_modes in
           let ret_mode =
             match rest with
             | [] -> ret_mode
-            | _ :: _ -> acc_mode
+            | _ :: _ ->
+              { mode_modes = acc_mode; mode_desc = [] }
           in
           let ret_cty = loop acc_mode rest in
           let arg_ty = arg_cty.ctyp_type in
@@ -871,14 +872,16 @@ and transl_type_aux env ~row_context ~aliased ~policy mode styp =
                 (newconstr Predef.path_option [Btype.tpoly_get_mono arg_ty])
             end
           in
-          let arg_mode = Alloc.of_const arg_mode in
-          let ret_mode = Alloc.of_const ret_mode in
-          let arrow_desc = (l, arg_mode, ret_mode) in
+          let arg_mode_desc = Alloc.of_const arg_mode.mode_modes in
+          let ret_mode_desc = Alloc.of_const ret_mode.mode_modes in
+          let arrow_desc = (l, arg_mode_desc, ret_mode_desc) in
           let ty =
             newty (Tarrow(arrow_desc, arg_ty, ret_cty.ctyp_type, commu_ok))
           in
-          ctyp (Ttyp_arrow (l, arg_cty, ret_cty)) ty
-        | [] -> transl_type env ~policy ~row_context ret_mode ret
+          ctyp
+            (Ttyp_arrow (l, arg_cty, arg_mode, ret_cty, ret_mode))
+            ty
+        | [] -> transl_type env ~policy ~row_context ret_mode.mode_modes ret
       in
       loop mode args
   | Ptyp_tuple stl ->

@@ -1516,7 +1516,7 @@ and build_as_type_and_mode_extra env p ~mode : _ -> _ * _ = function
   | ((Tpat_type _ | Tpat_open _ | Tpat_unpack |
       Tpat_inspected_type _), _, _) :: rest ->
       build_as_type_and_mode_extra env p rest ~mode
-  | (Tpat_constraint {ctyp_type = ty; _}, _, _) :: rest ->
+  | (Tpat_constraint ({ctyp_type = ty; _}, _), _, _) :: rest ->
       (* If the type constraint is ground, then this is the best type
          we can return, so just return an instance (cf. #12313) *)
       if closed_type_expr ty then instance ty, mode else
@@ -2861,9 +2861,7 @@ and type_pat_aux
     let ty_elt, arg_sort =
       solve_Ppat_array ~refine:false loc penv mutability expected_ty
     in
-    let modalities =
-      Typemode.transl_modalities ~maturity:Stable mutability []
-    in
+    let modalities = Typemode.mutable_modalities mutability in
     check_project_mutability ~loc ~env:!!penv Array_elements mutability
       alloc_mode.mode;
     let is_contained_by : Mode.Hint.is_contained_by =
@@ -3392,14 +3390,19 @@ and type_pat_aux
       (* Pretend separate = true *)
       begin match sty with
       | Some sty ->
+        let type_modes = Typemode.transl_alloc_mode ms in
         let cty, ty, expected_ty' =
-          let _, type_modes = Typemode.transl_alloc_mode ms in
-          solve_Ppat_constraint tps loc !!penv type_modes sty expected_ty
+          solve_Ppat_constraint tps loc !!penv type_modes.mode_modes sty
+            expected_ty
         in
         let p =
           type_pat ~alloc_mode tps category sp_constrained expected_ty' sort
         in
-        let extra = (Tpat_constraint cty, loc, sp_constrained.ppat_attributes) in
+        let extra =
+          Tpat_constraint (cty, type_modes),
+          loc,
+          sp_constrained.ppat_attributes
+        in
         { p with pat_type = ty; pat_extra = extra::p.pat_extra }
       | None ->
         type_pat ~alloc_mode tps category sp_constrained expected_ty sort
@@ -4746,20 +4749,21 @@ let rec approx_type env sty =
       (* CR layouts v5: value requirement here to be relaxed *)
       if is_optional p then newvar Predef.option_argument_jkind
       else begin
-        let _, arg_mode = Typemode.transl_alloc_mode arg_mode in
+        let arg_mode = Typemode.transl_alloc_mode arg_mode in
         let arg_ty =
           (* Polymorphic types will only unify with types that match all of their
            polymorphic parts, so we need to fully translate the type here
            unlike in the monomorphic case *)
-          Typetexp.transl_simple_type ~new_var_jkind:Any env ~closed:false arg_mode arg_sty
+          Typetexp.transl_simple_type ~new_var_jkind:Any env ~closed:false
+            arg_mode.mode_modes arg_sty
         in
         let ret = approx_type env sty in
-        let marg = Alloc.of_const arg_mode in
+        let marg = Alloc.of_const arg_mode.mode_modes in
         let mret = Alloc.newvar () in
         newty (Tarrow ((p,marg,mret), arg_ty.ctyp_type, ret, commu_ok))
       end
   | Ptyp_arrow (p, arg_sty, sty, arg_mode, _) ->
-      let _, arg_mode = Typemode.transl_alloc_mode arg_mode in
+      let arg_mode = Typemode.transl_alloc_mode arg_mode in
       let p = Typetexp.transl_label p (Some arg_sty) in
       let arg =
         if is_optional p
@@ -4767,7 +4771,7 @@ let rec approx_type env sty =
         else newvar (Jkind.Builtin.any ~why:Inside_of_Tarrow)
       in
       let ret = approx_type env sty in
-      let marg = Alloc.of_const arg_mode in
+      let marg = Alloc.of_const arg_mode.mode_modes in
       let mret = Alloc.newvar () in
       newty (Tarrow ((p,marg,mret), newmono arg, ret, commu_ok))
   | Ptyp_tuple args ->
@@ -4788,10 +4792,10 @@ let type_pattern_approx env spat ty_expected =
       let inferred_ty =
         match sty with
         | {ptyp_desc=Ptyp_poly _} ->
-          let _, arg_type_mode = Typemode.transl_alloc_mode arg_type_mode in
+          let arg_type_mode = Typemode.transl_alloc_mode arg_type_mode in
           let inferred_ty =
             Typetexp.transl_simple_type ~new_var_jkind:Any env ~closed:false
-              arg_type_mode sty
+              arg_type_mode.mode_modes sty
           in
           inferred_ty.ctyp_type
         | _ -> approx_type env sty
@@ -4846,7 +4850,7 @@ let type_approx_fun_one_param
   in
   Option.iter
     (fun mode_annots ->
-      apply_mode_annots ~loc ~env mode_annots arg_mode)
+      apply_mode_annots ~loc ~env mode_annots.mode_modes arg_mode)
     mode_annots;
   if has_poly then begin
     match spato with
@@ -5116,7 +5120,8 @@ let check_partial_application ~statement exp =
 
 let pattern_needs_partial_application_check p =
   let rec check : type a. a general_pattern -> bool = fun p ->
-    not (List.exists (function (Tpat_constraint _, _, _) -> true | _ -> false)
+    not (List.exists
+          (function (Tpat_constraint (_, _), _, _) -> true | _ -> false)
           p.pat_extra) &&
     match p.pat_desc with
     | Tpat_any -> true
@@ -5608,7 +5613,7 @@ type type_function_result =
 
 and type_function_ret_info =
   { (* The mode the function returns at. *)
-    ret_mode: Mode.Alloc.l;
+    ret_mode: Mode.Alloc.l modes;
     (* The sort returned by the function. *)
     ret_sort: Jkind.sort;
   }
@@ -6907,18 +6912,26 @@ and type_expect_
         exp_env = env }
   | Pexp_constraint (sarg, None, modes) ->
       let modes = Typemode.transl_mode_annots modes in
-      let expected_mode = type_expect_mode ~loc ~env ~modes expected_mode in
+      let expected_mode =
+        type_expect_mode ~loc ~env ~modes:modes.mode_modes expected_mode
+      in
       let exp = type_expect env expected_mode sarg (mk_expected ty_expected ?explanation) in
-      { exp with exp_loc = loc }
+      { exp with exp_loc = loc
+      ; exp_extra = (Texp_mode modes, loc, []) :: exp.exp_extra
+      }
   | Pexp_constraint (sarg, Some sty, modes) ->
       let modes = Typemode.transl_mode_annots modes in
       let (ty, extra_cty) =
         let alloc_mode =
-          Mode.Alloc.Const.Option.value modes ~default:Mode.Alloc.Const.legacy
+          Mode.Alloc.Const.Option.value
+            modes.mode_modes
+            ~default:Mode.Alloc.Const.legacy
         in
         type_constraint env sty alloc_mode
       in
-      let expected_mode = type_expect_mode ~loc ~env ~modes expected_mode in
+      let expected_mode =
+        type_expect_mode ~loc ~env ~modes:modes.mode_modes expected_mode
+      in
       let ty' = instance ty in
       let error_message_attr_opt =
         Builtin_attributes.error_message_attr sexp.pexp_attributes in
@@ -8146,12 +8159,14 @@ and type_function
       let ret_mode_annots =
         match rest with
         | [] ->
-          (* if this is the last parameter before the equal sign, then [ret_mode_annotation]
-            applies to the RHS of the equal sign. This is before [split_function_ty] which
-            enters new region. *)
-          let annots = Typemode.transl_mode_annots body_constraint.ret_mode_annotations in
-          annots
-        | _ :: _ -> Alloc.Const.Option.none
+          (* If this is the last parameter before the equal sign, then
+             [ret_mode_annotation] applies to the RHS of the equal sign. This is
+             before [split_function_ty] which enters new region. *)
+          (* CR lstevenson: We redundantly transl the mode annotations a second
+             time in the recursive call to type_function later on. *)
+          Typemode.transl_mode_annots body_constraint.ret_mode_annotations
+        | _ :: _ ->
+          { mode_modes = Alloc.Const.Option.none; mode_desc = [] }
       in
       let env,
           { filtered_arrow = { ty_arg; arg_mode; ty_ret; ret_mode };
@@ -8161,7 +8176,9 @@ and type_function
           } =
         split_function_ty env expected_mode ty_expected loc
           ~is_first_val_param:first ~is_final_val_param
-          ~arg_label:typed_arg_label ~in_function ~has_poly ~mode_annots ~ret_mode_annots
+          ~arg_label:typed_arg_label ~in_function ~has_poly
+          ~mode_annots:mode_annots.mode_modes
+          ~ret_mode_annots:ret_mode_annots.mode_modes
       in
       (* [ty_arg_internal] is the type of the parameter viewed internally
          to the function. This is different than [ty_arg_mono] exactly for
@@ -8318,7 +8335,8 @@ and type_function
               fp_partial = partial;
               fp_newtypes = newtypes;
               fp_sort = arg_sort;
-              fp_mode = Alloc.disallow_right arg_mode;
+              fp_mode =
+                { mode_annots with mode_modes = Alloc.disallow_right arg_mode };
               fp_curry = curry;
               fp_loc = pparam_loc;
             };
@@ -8327,7 +8345,11 @@ and type_function
       let ret_info =
         match ret_info with
         | Some _ as x -> x
-        | None -> Some { ret_sort; ret_mode = Alloc.disallow_right ret_mode }
+        | None ->
+          let ret_mode =
+            {ret_mode_annots with mode_modes = Alloc.disallow_right ret_mode }
+          in
+          Some { ret_sort ; ret_mode }
       in
       { function_ = exp_type, param :: params, body;
         newtypes = []; params_contain_gadt = contains_gadt;
@@ -8361,10 +8383,18 @@ and type_function
             let body_loc = body.pexp_loc in
             let body, exp_type, exp_extra =
               type_constraint_expect (expression_constraint body)
-                env expected_mode body_loc ~loc_arg:body_loc type_mode constraint_ ty_expected
+                env expected_mode body_loc ~loc_arg:body_loc
+                type_mode.mode_modes constraint_ ty_expected
+            in
+            let texp_mode =
+              match type_mode.mode_desc with
+              | [] -> []
+              | _ :: _ ->
+                [ (Texp_mode type_mode, body_loc, []) ]
             in
             { body with
-                exp_extra = (exp_extra, body_loc, []) :: body.exp_extra;
+                exp_extra =
+                  texp_mode @ (exp_extra, body_loc, []) :: body.exp_extra;
                 exp_type;
             }
           in
@@ -8377,7 +8407,7 @@ and type_function
           in
           let (cases, exp_type, fun_alloc_mode, ret_info), exp_extra =
             match ret_type_constraint with
-            | None -> type_cases_expect env expected_mode ty_expected, None
+            | None -> type_cases_expect env expected_mode ty_expected, []
             | Some constraint_ ->
               (* The typing of function case coercions/constraints is
                   analogous to the typing of expression coercions/constraints.
@@ -8408,14 +8438,21 @@ and type_function
               in
               let (body, fun_alloc_mode, ret_info), exp_type, exp_extra =
                 type_constraint_expect function_cases_constraint_arg
-                  env expected_mode loc type_mode constraint_ ty_expected ~loc_arg:loc
+                  env expected_mode loc type_mode.mode_modes constraint_
+                  ty_expected ~loc_arg:loc
               in
-              (body, exp_type, fun_alloc_mode, ret_info), Some exp_extra
+              let exp_extra =
+                match type_mode.mode_desc with
+                | [] -> [ exp_extra ]
+                | _ :: _ ->
+                  [ Texp_mode type_mode ; exp_extra ]
+              in
+              (body, exp_type, fun_alloc_mode, ret_info), exp_extra
           in
           let cases =
             match exp_extra with
-            | None -> cases
-            | Some _ as fc_exp_extra -> { cases with fc_exp_extra }
+            | [] -> cases
+            | _ :: _ as fc_exp_extra -> { cases with fc_exp_extra }
           in
           exp_type, Tfunction_cases cases, Some fun_alloc_mode, Some ret_info
      in
@@ -9001,11 +9038,12 @@ and type_argument ?explanation ?recarg ~overwrite env (mode : expected_mode) sar
                   { fc_cases = cases; fc_partial = Total; fc_param = param;
                     fc_param_debug_uid = param_uid; fc_env = env;
                     fc_ret_type = ty_res; fc_loc = cases_loc;
-                    fc_exp_extra = None; fc_attributes = [];
+                    fc_exp_extra = []; fc_attributes = [];
                     fc_arg_mode = Alloc.disallow_right marg;
                     fc_arg_sort = arg_sort;
                   };
-              ret_mode = Alloc.disallow_right mret;
+              ret_mode =
+                { mode_modes = Alloc.disallow_right mret; mode_desc = [] };
               ret_sort;
               alloc_mode;
               zero_alloc = Zero_alloc.default
@@ -9985,7 +10023,7 @@ and type_function_cases_expect
         fc_param = param;
         fc_param_debug_uid = param_uid;
         fc_loc = loc;
-        fc_exp_extra = None;
+        fc_exp_extra = [];
         fc_env = env;
         fc_ret_type = ty_ret;
         fc_attributes = [];
@@ -9995,7 +10033,8 @@ and type_function_cases_expect
     in
     cases, ty_fun, alloc_mode,
       { ret_sort;
-        ret_mode = Alloc.disallow_right ret_mode }
+        ret_mode =
+          {mode_modes = Alloc.disallow_right ret_mode; mode_desc = []} }
   end
 
 (* Typing of let bindings *)
@@ -10461,7 +10500,7 @@ and type_generic_array
     if Types.is_mutable mutability then Predef.type_array
     else Predef.type_iarray
   in
-  let modalities = Typemode.transl_modalities ~maturity:Stable mutability [] in
+  let modalities = Typemode.mutable_modalities mutability in
   let is_contained_by : Mode.Hint.is_contained_by =
     {containing = Array Modality; container = loc}
   in

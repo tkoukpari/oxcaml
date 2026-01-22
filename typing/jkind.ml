@@ -1356,7 +1356,8 @@ module Const = struct
       | Left_jkind (transl_type, _) ->
         let type_ = transl_type type_ in
         let modality =
-          Typemode.transl_modalities ~maturity:Stable Immutable modalities
+          (Typemode.transl_modalities ~maturity:Stable Immutable modalities)
+            .moda_modalities
         in
         { layout = base.layout;
           mod_bounds = base.mod_bounds;
