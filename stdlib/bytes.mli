@@ -133,7 +133,7 @@ val fill : bytes -> int -> int -> char -> unit
     valid range of [s]. *)
 
 val blit :
-  bytes @ read -> int -> bytes @ local -> int -> int
+  bytes @ local -> int -> bytes @ local -> int -> int
   -> unit
 (** [blit src src_pos dst dst_pos len] copies [len] bytes from byte
     sequence [src], starting at index [src_pos], to byte sequence [dst],
